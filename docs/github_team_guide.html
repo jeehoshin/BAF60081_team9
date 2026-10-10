@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🐣 초보자를 위한 초간단 GitHub 협업 매뉴얼 · 9조 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --warn: #ea580c;
+      --warn-light: #fff7ed;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+      --code-text: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      border-radius: 9999px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      word-break: keep-all;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      padding: 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .step-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: white;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .step-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    p { margin-bottom: 16px; word-break: keep-all; }
+    .highlight-box {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .warn-box {
+      background: var(--warn-light);
+      border-left: 4px solid var(--warn);
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .success-box {
+      background: var(--success-light);
+      border-left: 4px solid var(--success);
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .cmd-group {
+      margin: 16px 0;
+    }
+    .cmd-desc {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+      font-size: 0.92rem;
+      overflow-x: auto;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    code.kw { color: #60a5fa; font-weight: 700; }
+    code.str { color: #86efac; }
+    code.cm { color: #94a3b8; font-style: italic; }
+    .diagram-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f1f5f9;
+      padding: 24px;
+      border-radius: 14px;
+      margin: 20px 0;
+    }
+    .diagram-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .node {
+      padding: 10px 16px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .arrow {
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .rule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .rule-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="badge">KAIST DFMBA · 클라우드 컴퓨팅 실습 9조</div>
+    <h1>🐣 완전 초보를 위한<br>초간단 GitHub 협업 가이드</h1>
+    <p class="subtitle">Git을 몰라도 괜찮아요! 이 순서도대로 6개의 명령어만 따라 하면 싸우지 않고 평화롭게 협업할 수 있습니다.</p>
+  </header>
+
+  <!-- 큰 그림 비유 -->
+  <div class="card" style="border-top: 5px solid var(--primary);">
+    <div class="card-header">
+      <div class="step-num" style="background:#0f172a;">★</div>
+      <h2 class="step-title">1분 이해: 깃허브 협업의 황금 룰!</h2>
+    </div>
+    <p>깃허브는 쉽게 말해 <strong>"모두가 공유하는 구글 드라이브 원본 문서(main)"</strong>입니다.</p>
+    <div class="warn-box">
+      <strong>🚨 절대 하지 말아야 할 것:</strong> 원본 문서(main)에 모두가 동시에 글을 쓰면 문장이 꼬이고 난리가 납니다.
+    </div>
+    <p>그래서 우리는 아래 3단계 규칙만 지킵니다:</p>
+    <div class="diagram-container">
+      <div class="diagram-row">
+        <span class="node" style="border-color:#3b82f6;">🌿 1. 내 브랜치 만들기</span>
+        <span class="arrow">➜</span>
+        <span>원본(main)을 복사해서 나만의 연습장(branch)을 만든다.</span>
+      </div>
+      <div class="diagram-row">
+        <span class="node" style="border-color:#10b981;">💻 2. 내 방에서 실컷 수정</span>
+        <span class="arrow">➜</span>
+        <span>내 연습장에서 마음껏 코드를 고치고 테스트한다. (남에게 피해 없음!)</span>
+      </div>
+      <div class="diagram-row">
+        <span class="node" style="border-color:#8b5cf6;">📬 3. PR(검토 요청) 올리기</span>
+        <span class="arrow">➜</span>
+        <span>"저 다 고쳤어요! 원본에 합쳐주세요(Merge)" 하고 팀원에게 승인받는다.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 0단계: 팀장 초대 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">0</div>
+      <h2 class="step-title">[팀장용] 팀원들 초대하기 (Collaborator)</h2>
+    </div>
+    <p>팀원들이 우리 저장소에 들어와서 코드를 올리려면 <strong>초대장</strong>을 먼저 보내야 합니다.</p>
+    <ol style="margin-left:20px;margin-bottom:16px;">
+      <li>GitHub 저장소(<a href="https://github.com/jeehoshin/BAF60081_team9" target="_blank">BAF60081_team9</a>) 접속</li>
+      <li>상단 메뉴에서 <strong>Settings</strong> 클릭</li>
+      <li>왼쪽 세로 메뉴에서 <strong>Collaborators</strong> 클릭</li>
+      <li>초록색 <strong>Add people</strong> 버튼 클릭 후 <strong>팀원의 GitHub 아이디(또는 이메일)</strong> 검색하여 초대!</li>
+    </ol>
+    <div class="highlight-box">
+      💌 <strong>팀원 확인 사항:</strong> 팀원은 본인 이메일이나 GitHub 알림창으로 온 초대장을 열어 <strong>[Accept invitation]</strong>을 반드시 눌러야 합니다.
+    </div>
+  </div>
+
+  <!-- 1단계: Clone -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">1</div>
+      <h2 class="step-title">[팀원용] 처음 1회: 내 컴퓨터로 프로젝트 복사해오기 (Clone)</h2>
+    </div>
+    <p>터미널(또는 명령 프롬프트)을 열고, 프로젝트를 저장하고 싶은 폴더로 이동한 뒤 딱 한 번 실행합니다:</p>
+    <div class="cmd-group">
+      <div class="cmd-desc">저장소 통째로 다운로드받기:</div>
+      <pre><code class="kw">git</code> clone https://github.com/jeehoshin/BAF60081_team9.git
+<code class="kw">cd</code> BAF60081_team9</pre>
+    </div>
+    <div class="success-box">
+      ✅ 이제 내 컴퓨터에도 전체 백엔드, 프론트엔드 최신 코드가 복사되었습니다!
+    </div>
+  </div>
+
+  <!-- 2단계: Branch 생성 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">2</div>
+      <h2 class="step-title">작업 시작: 나만의 작업 공간(브랜치) 만들기</h2>
+    </div>
+    <p>코드를 한 글자라도 고치기 전에, 반드시 <strong>나만의 브랜치</strong>로 방을 옮겨야 합니다.</p>
+    <div class="cmd-group">
+      <div class="cmd-desc">최신 main에서 새 브랜치 만들고 이동하기:</div>
+      <pre><code class="cm"># 문법: git switch -c 브랜치이름 (내이름/기능명 추천)</code>
+<code class="kw">git</code> switch -c feature/api-collector    <code class="cm"># 예: 외부 API 담당자</code>
+<code class="cm"># 또는</code>
+<code class="kw">git</code> switch -c feature/design-fix       <code class="cm"># 예: 디자인 수정</code></pre>
+    </div>
+    <p style="font-size:0.9rem;color:var(--text-muted);">
+      💡 <code>git branch</code> 명령어를 쳤을 때 내가 만든 브랜치 이름 앞에 별표(*)가 붙어 있으면 성공입니다.
+    </p>
+  </div>
+
+  <!-- 3단계: 작업 & 커밋 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">3</div>
+      <h2 class="step-title">코드 수정 후 저장하기 (Commit)</h2>
+    </div>
+    <p>VS Code 등에서 코드를 자유롭게 수정하고 저장하세요. 수정이 끝났으면 Git에 "여기까지 기록해 줘!" 하고 도장을 찍습니다.</p>
+    <div class="cmd-group">
+      <div class="cmd-desc">수정한 파일 장바구니에 담기:</div>
+      <pre><code class="kw">git</code> add .</pre>
+      <div class="cmd-desc">기록 설명(커밋 메시지) 적고 도장 쾅 찍기:</div>
+      <pre><code class="kw">git</code> commit -m <code class="str">"feat: 한국관광공사 축제 데이터 수집 함수 추가"</code></pre>
+    </div>
+    <div class="highlight-box">
+      💡 <code>git status</code>를 치면 빨간 글씨가 초록 글씨로 변했다가 깔끔하게 정리되는 모습을 볼 수 있습니다!
+    </div>
+  </div>
+
+  <!-- 4단계: Push & PR -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">4</div>
+      <h2 class="step-title">깃허브에 올리고 검토 요청하기 (Push & PR)</h2>
+    </div>
+    <p>내 컴퓨터에서 저장한 내용을 깃허브 사이트로 쏩니다.</p>
+    <div class="cmd-group">
+      <div class="cmd-desc">내 브랜치를 깃허브에 올리기:</div>
+      <pre><code class="kw">git</code> push -u origin 내브랜치이름
+<code class="cm"># 예시: git push -u origin feature/api-collector</code></pre>
+    </div>
+    <div class="success-box">
+      <strong>🎉 깃허브 웹사이트로 이동하세요!</strong><br>
+      저장소 페이지 상단에 노란색 띠와 함께 <strong>[Compare & pull request]</strong> 버튼이 뜹니다!<br>
+      그 버튼을 누르고 <strong>"무엇을 수정했는지"</strong> 간단히 적은 뒤 <strong>[Create pull request]</strong>를 클릭하면 끝!
+    </div>
+  </div>
+
+  <!-- 5단계: Merge -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">5</div>
+      <h2 class="step-title">팀원끼리 확인하고 원본에 합치기 (Merge)</h2>
+    </div>
+    <p>이제 팀원이나 팀장(지호)이 깃허브 웹사이트에서 코드를 확인합니다.</p>
+    <ol style="margin-left:20px;margin-bottom:16px;">
+      <li><strong>Files changed</strong> 탭에서 초록색(추가된 코드)과 빨간색(지워진 코드)을 확인합니다.</li>
+      <li>"오 잘하셨네요! 문제없습니다" 싶으면 초록색 <strong>Merge pull request</strong> ➜ <strong>Confirm merge</strong> 클릭!</li>
+      <li>합쳐진 브랜치는 보라색 <strong>Delete branch</strong>를 눌러 깔끔하게 정리합니다.</li>
+    </ol>
+    <div class="highlight-box">
+      ✨ <strong>놀라운 사실:</strong> main에 합쳐지자마자 Render와 Vercel이 <strong>알아서 자동으로 재배포</strong>를 진행합니다! (CI/CD)
+    </div>
+  </div>
+
+  <!-- 6단계: 최신화 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="step-num">6</div>
+      <h2 class="step-title">다음 작업할 때 필수: 최신 코드 당겨오기 (Pull)</h2>
+    </div>
+    <p>다른 팀원이 올린 코드가 main에 합쳐졌으므로, 내 컴퓨터의 main도 최신 상태로 업데이트해야 충돌이 안 납니다.</p>
+    <div class="cmd-group">
+      <div class="cmd-desc">다시 main으로 돌아와서 최신 내용 받기:</div>
+      <pre><code class="kw">git</code> switch main
+<code class="kw">git</code> pull origin main</pre>
+    </div>
+    <p>이제 다시 <strong>2단계(새 브랜치 만들기)</strong>로 돌아가서 다음 작업을 시작하면 됩니다! 🔁</p>
+  </div>
+
+  <!-- 비상구: 충돌 방지 3원칙 -->
+  <div class="card" style="border: 2px solid var(--warn);">
+    <div class="card-header">
+      <div class="step-num" style="background:var(--warn);">🚨</div>
+      <h2 class="step-title">팀원 평화를 위한 3대 안전 수칙</h2>
+    </div>
+    <div class="rule-item">
+      <span class="rule-icon">1️⃣</span>
+      <div>
+        <strong>절대로 main 브랜치에서 바로 코드를 수정하고 push하지 마세요!</strong><br>
+        <span style="color:var(--text-muted);font-size:0.9rem;">반드시 <code>git switch -c 새브랜치</code>를 파서 작업하고 PR로 합치세요.</span>
+      </div>
+    </div>
+    <div class="rule-item">
+      <span class="rule-icon">2️⃣</span>
+      <div>
+        <strong>새 작업을 시작하기 전에는 무조건 <code>git pull</code>을 먼저 치세요!</strong><br>
+        <span style="color:var(--text-muted);font-size:0.9rem;">옛날 코드를 바탕으로 작업하다가 나중에 코드가 엉키는(Conflict) 사고를 99% 막아줍니다.</span>
+      </div>
+    </div>
+    <div class="rule-item">
+      <span class="rule-icon">3️⃣</span>
+      <div>
+        <strong>.env 파일이나 비밀번호는 절대로 커밋하지 마세요!</strong><br>
+        <span style="color:var(--text-muted);font-size:0.9rem;">우리가 이미 .gitignore 설정을 해두었지만, 키 값은 슬랙이나 카카오톡 시크릿으로만 공유하세요.</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>KAIST DFMBA 2026 Fall · Cloud Computing 9조 같이 갈래?</p>
+  </footer>
+</div>
+
+</body>
+</html>
