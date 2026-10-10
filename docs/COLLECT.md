@@ -69,6 +69,7 @@ Render → 백엔드 서비스 → **Environment** → Add Environment Variable
 | `SERVICE_KEY_IS_NOT_REGISTERED_ERROR` | 승인 직후라 아직 반영 전, 또는 키를 잘못 넣음 | 1~2시간 뒤 다시. Decoding 키 확인 |
 | `LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR` | TourAPI 하루 1,000건 초과 | 내일 다시 (한 번 수집에 지역당 1~3건 씀) |
 | `KOPIS 오류 …` / `KOPIS 요청 실패` | KOPIS 키 오타·만료·승인 취소 | KOPIS 키는 발급 후 1년 유효, 3개월 넘게 안 쓰면 승인이 취소된다. 연장·문의는 kopis@gokams.or.kr |
+| `KOPIS가 요청이 너무 잦다고 잠깐 막았어요 (Request Blocked)` | KOPIS는 1초에 10건쯤 넘게 부르면 잠깐 막는다. 수집기가 1초에 4건으로 천천히 부르고 막히면 다시 부르지만, 그래도 막힌 경우 | 1~2분 뒤 다시. 여러 사람이 동시에 수집을 누르지 않는다 |
 | `401 x-collect-token …` | 토큰이 다름 | Render의 `COLLECT_TOKEN` 값 확인 |
 | `503 COLLECT_TOKEN이 설정되지 않아…` | 토큰을 안 넣음 | 1번 다시 |
 

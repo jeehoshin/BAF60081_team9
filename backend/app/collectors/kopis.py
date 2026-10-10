@@ -52,6 +52,11 @@ GENRES = {
 MAX_ROWS = 100  # 목록 한 번에 받을 수 있는 최대 건수
 MAX_WINDOW_DAYS = 31  # 한 번에 묻는 기간은 31일 이하로 나눈다
 
+# KOPIS는 1초에 10건쯤 넘게 부르면 HTTP 400 "Request Blocked"로 잠깐 막는다 (2026-10-11 실제 키로 확인, 1초 뒤 풀림).
+MIN_INTERVAL = 0.25  # 요청 사이 간격(초). 1초에 4건
+MAX_TRIES = 4
+RETRY_WAIT = 1.5  # 다시 부르기 전 쉬는 시간(초). 시도할수록 길어진다
+
 
 def parse_dbs(content: bytes | str) -> list[ET.Element]:
     """<dbs><db>…</db></dbs> 응답에서 db 요소들을 꺼낸다. 오류 응답이면 CollectError."""
@@ -105,22 +110,37 @@ class _Fetcher:
         self.client = client
         self.key = key
         self.sem = asyncio.Semaphore(concurrency)
+        self.pace = asyncio.Lock()
+        self.next_at = 0.0
+
+    async def _wait_turn(self) -> None:
+        """요청 사이를 MIN_INTERVAL만큼 띄운다."""
+        async with self.pace:
+            loop = asyncio.get_running_loop()
+            delay = self.next_at - loop.time()
+            if delay > 0:
+                await asyncio.sleep(delay)
+            self.next_at = loop.time() + MIN_INTERVAL
 
     async def get(self, path: str, params: dict | None = None) -> list[ET.Element]:
-        """한 번 실패하면(연결 오류·5xx) 잠깐 쉬고 한 번 더 부른다."""
+        """실패하면(연결 오류·5xx·요청 차단) 잠깐 쉬고 다시 부른다."""
         query = {"service": self.key, **(params or {})}
         problem = ""
-        for attempt in range(2):
+        for attempt in range(MAX_TRIES):
             if attempt:
-                await asyncio.sleep(0.7)
+                await asyncio.sleep(RETRY_WAIT * attempt)
             try:
                 async with self.sem:
+                    await self._wait_turn()
                     res = await self.client.get(f"{BASE_URL}/{path}", params=query)
             except httpx.HTTPError as exc:
                 problem = f"KOPIS에 연결하지 못했어요 ({type(exc).__name__})"
                 continue
             if res.status_code >= 500:
                 problem = f"KOPIS 서버 오류 (HTTP {res.status_code})"
+                continue
+            if res.status_code == 400 and b"Request Blocked" in res.content:
+                problem = "KOPIS가 요청이 너무 잦다고 잠깐 막았어요 (Request Blocked). 1~2분 뒤 다시 시도하세요."
                 continue
             if res.status_code >= 400:
                 raise CollectError(f"KOPIS 요청 실패 (HTTP {res.status_code}). 인증키를 확인하세요.")

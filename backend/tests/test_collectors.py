@@ -30,6 +30,9 @@ from app.database import Base, ensure_schema  # noqa: E402
 from app.models import Activity  # noqa: E402
 
 TODAY = date(2026, 10, 11)
+kopis.MIN_INTERVAL = kopis.RETRY_WAIT = 0  # 테스트에서는 요청 사이에 쉬지 않는다
+
+KOPIS_BLOCKED = "<HTML><HEAD><TITLE>400 Bad Request</TITLE></HEAD><BODY><H1>Request Blocked</H1></BODY></HTML>"
 
 KOPIS_LIST_DAEJEON = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?><dbs>
 <db><mt20id>PF302715</mt20id><prfnm>꽃잠 [대전]</prfnm><prfpdfrom>2026.10.14</prfpdfrom><prfpdto>2026.10.17</prfpdto><fcltynm>드림아트홀 [대전]</fcltynm><poster>http://www.kopis.or.kr/upload/pfmPoster/PF_PF302715_261007_134956.gif</poster><area>대전광역시</area><genrenm>연극</genrenm><openrun>N</openrun><prfstate>공연예정</prfstate></db>
@@ -252,6 +255,29 @@ class CollectTests(unittest.TestCase):
         self.assertEqual([r["external_id"] for r in rows], ["KOPIS:PF302715"])
         tour_errors = [r.error for r in reports if r.source == "한국관광공사"]
         self.assertTrue(all("SERVICE_KEY_IS_NOT_REGISTERED_ERROR" in e for e in tour_errors))
+
+    def test_kopis_retries_when_blocked(self):
+        """요청이 잦아 400 Request Blocked가 오면 다시 불러서 받는다. 계속 막히면 인증키 탓으로 돌리지 않는다."""
+        inner = make_transport([])
+        seen: dict[str, int] = {}
+
+        def flaky(request):
+            if request.url.host == "kopis.or.kr":
+                seen[request.url.path] = seen.get(request.url.path, 0) + 1
+                if seen[request.url.path] == 1 and "PF302715" in request.url.path:
+                    return httpx.Response(400, text=KOPIS_BLOCKED)
+            return inner.handler(request)
+
+        opts = runner.CollectOptions(sources="kopis", areas="대전")
+        rows, reports, *_ = asyncio.run(runner.gather_rows(opts, "key", "", httpx.MockTransport(flaky)))
+        self.assertEqual([r["external_id"] for r in rows], ["KOPIS:PF302715"])
+        self.assertEqual(seen["/openApi/restful/pblprfr/PF302715"], 2)
+
+        always = httpx.MockTransport(lambda request: httpx.Response(400, text=KOPIS_BLOCKED))
+        rows, reports, *_ = asyncio.run(runner.gather_rows(opts, "key", "", always))
+        self.assertEqual(rows, [])
+        self.assertIn("Request Blocked", reports[0].error)
+        self.assertNotIn("인증키", reports[0].error)
 
     def test_tour_pages_until_total(self):
         def item(i):
