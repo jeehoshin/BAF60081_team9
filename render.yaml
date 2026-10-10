@@ -17,5 +17,7 @@ services:
       # 배포·팀 시연은 반드시 0 (Supabase 사용)
       - key: USE_MEMORY
         value: "0"
+      - key: PYTHON_VERSION
+        value: 3.12.7
       - key: TZ
         value: Asia/Seoul
