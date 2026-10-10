@@ -1,6 +1,6 @@
 (function () {
   function boot() {
-    const { api, renderUserBox, setStatus, escapeHtml, fmtDate } = window.Gachi;
+    const { api, renderUserBox, setStatus, escapeHtml, fmtPeriod } = window.Gachi;
     renderUserBox();
 
     async function load() {
@@ -25,7 +25,7 @@
             <div class="meta">
               <span>${escapeHtml(a.region || "지역 미상")}</span>
               <span>${escapeHtml(a.place || "")}</span>
-              <span>${fmtDate(a.starts_at)}</span>
+              <span>${fmtPeriod(a.starts_at, a.ends_at)}</span>
               <span>${escapeHtml(a.cost || "")}</span>
             </div>
             <p class="hint" style="margin:0">${escapeHtml(a.description || "")}</p>

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -25,16 +25,22 @@ class User(Base):
 
 class Activity(Base):
     __tablename__ = "activities"
+    # 공공 API 행사는 원본 ID로 한 번만 저장한다 (사용자 활동은 NULL이라 제약에 걸리지 않음)
+    __table_args__ = (Index("uq_activities_external_id", "external_id", unique=True),)
 
     activity_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     activity_type: Mapped[str] = mapped_column(String(32), nullable=False)  # 공연/축제/전시/러닝
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     place: Mapped[str | None] = mapped_column(String(255))
-    region: Mapped[str | None] = mapped_column(String(64))  # 서울 구
+    region: Mapped[str | None] = mapped_column(String(64))  # 서울·대전 구 ('OO구')
     starts_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime)  # 기간이 있는 공연·축제의 마지막 날
     cost: Mapped[str | None] = mapped_column(String(64))
     description: Mapped[str | None] = mapped_column(Text)
-    source: Mapped[str] = mapped_column(String(32), default="user")  # API / user
+    source: Mapped[str] = mapped_column(String(32), default="user")  # user / API / KOPIS / 한국관광공사
+    external_id: Mapped[str | None] = mapped_column(String(64))  # 'KOPIS:PF302715', 'TOUR:2786391'
+    source_url: Mapped[str | None] = mapped_column(String(512))  # 원본 페이지
+    image_url: Mapped[str | None] = mapped_column(String(512))  # 포스터·대표 이미지
     lat: Mapped[float | None] = mapped_column(Float)
     lng: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

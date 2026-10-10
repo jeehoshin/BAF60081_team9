@@ -17,9 +17,13 @@ create table if not exists activities (
   place varchar(255),
   region varchar(64),
   starts_at timestamp,
+  ends_at timestamp,              -- 기간이 있는 공연·축제의 마지막 날
   cost varchar(64),
   description text,
-  source varchar(32) default 'user',
+  source varchar(32) default 'user',  -- user / API / KOPIS / 한국관광공사
+  external_id varchar(64),        -- 공공 API 원본 ID ('KOPIS:PF302715', 'TOUR:2786391')
+  source_url varchar(512),        -- 원본 페이지
+  image_url varchar(512),         -- 포스터·대표 이미지
   lat double precision,
   lng double precision,
   created_at timestamp default now()
@@ -77,3 +81,11 @@ alter table meetups add column if not exists place_name varchar(255);
 alter table meetups add column if not exists lat double precision;
 alter table meetups add column if not exists lng double precision;
 alter table meetups add column if not exists how text;
+
+-- 공공 API 수집(KOPIS·TourAPI)용 칸 (2026-10)
+-- 백엔드가 시작할 때 없으면 자동으로 추가하지만, SQL Editor에서 직접 돌려도 된다.
+alter table activities add column if not exists ends_at timestamp;
+alter table activities add column if not exists external_id varchar(64);
+alter table activities add column if not exists source_url varchar(512);
+alter table activities add column if not exists image_url varchar(512);
+create unique index if not exists uq_activities_external_id on activities (external_id);

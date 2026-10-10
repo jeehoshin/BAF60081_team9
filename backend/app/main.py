@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import SessionLocal, init_db
-from app.routers import activities, live, map as map_router, meetups, stats, users
+from app.routers import activities, collect, live, map as map_router, meetups, stats, users
 from app.seed import seed_demo_data
 
 
@@ -50,6 +50,7 @@ app.include_router(meetups.router)
 app.include_router(stats.router)
 app.include_router(live.router)
 app.include_router(map_router.router)
+app.include_router(collect.router)
 
 
 @app.get("/health")

@@ -100,6 +100,28 @@ function fmtDate(iso) {
   });
 }
 
+function fmtDay(d) {
+  return d.toLocaleDateString("ko-KR", { month: "short", day: "numeric", weekday: "short" });
+}
+
+// 공공 API 행사는 날짜만 있고(00:00 시작), 기간이 있다. 예: "10월 14일 (수) ~ 10월 17일 (토)"
+function fmtPeriod(startIso, endIso) {
+  if (!startIso) return "일정 미정";
+  const s = new Date(startIso);
+  if (Number.isNaN(s.getTime())) return startIso;
+  const e = endIso ? new Date(endIso) : null;
+  const allDay = s.getHours() === 0 && s.getMinutes() === 0;
+  if (!e || Number.isNaN(e.getTime()) || e.toDateString() === s.toDateString()) {
+    return allDay ? fmtDay(s) : fmtDate(startIso);
+  }
+  return `${fmtDay(s)} ~ ${fmtDay(e)}`;
+}
+
+// http(s) 주소만 링크·이미지로 쓴다
+function safeUrl(url) {
+  return typeof url === "string" && /^https?:\/\//i.test(url) ? url : "";
+}
+
 const NAV_ITEMS = [
   ["home", "index.html", "활동"],
   ["map", "map.html", "지도"],
@@ -158,6 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.Gachi = {
   api, API, UserStore, setStatus, requireUser, renderUserBox, escapeHtml, fmtDate, fmtTime,
-  typeStyle, renderNav, applyMascot,
+  fmtPeriod, safeUrl, typeStyle, renderNav, applyMascot,
 };
 })();

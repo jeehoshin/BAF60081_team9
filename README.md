@@ -9,20 +9,20 @@
 | 프론트 | HTML/CSS/JS | **Vercel** |
 | 백엔드 | FastAPI | **Render** |
 | DB | PostgreSQL | **Supabase** |
-| 수집 | 공공 Open API 배치 | 로컬 스크립트 |
+| 수집 | KOPIS · 한국관광공사 TourAPI | Swagger `POST /collect` 또는 로컬 스크립트 |
 
 ```
 이용자(QR) → Vercel → Render(FastAPI) → Supabase
-공공 API → scripts/collect_activities.py → Supabase
+KOPIS·TourAPI → POST /collect (또는 scripts/collect_activities.py) → Supabase activities
 ```
 
 ## 저장소 구조
 
 ```
-backend/     FastAPI (Render)
+backend/     FastAPI (Render) · 공공 API 수집기 backend/app/collectors/
 frontend/    시연 화면 (Vercel)
-scripts/     공공 API 수집 골격
-docs/        키 체크리스트 · 배포 · API · DB
+scripts/     공공 API 수집 로컬 실행용
+docs/        키 체크리스트 · 수집 · 배포 · API · DB
 ```
 
 ## 필요한 키 (정확히 이 목록)
@@ -34,9 +34,16 @@ docs/        키 체크리스트 · 배포 · API · DB
 | ✅ | `DATABASE_URL` | Supabase 연결 (Render + 로컬) |
 | ✅ | `CORS_ORIGINS` | Vercel URL 허용 |
 | ✅ | `frontend/config.js` → `API_BASE_URL` | Render API 주소 |
-| 수집시 | `TOUR_API_KEY` | 한국관광공사 TourAPI |
+| 수집시 | `TOUR_API_KEY` | 한국관광공사 TourAPI (Decoding 키) |
 | 수집시 | `KOPIS_API_KEY` | KOPIS 공연 |
-| 수집시 | `CULTURE_API_KEY` | 한국문화정보원 전시 |
+| 수집시 | `COLLECT_TOKEN` | Swagger `POST /collect` 실행용 비밀 문자열 |
+| 선택 | `CULTURE_API_KEY` | 한국문화정보원 전시 (아직 수집기 미연결) |
+
+## 공공 API 수집
+
+KOPIS(공연)와 한국관광공사 TourAPI(축제·공연·행사)에서 **서울·대전** 행사를 받아 `activities`에 넣는다.
+Render에 `KOPIS_API_KEY`·`TOUR_API_KEY`·`COLLECT_TOKEN`을 넣고 Swagger에서 **POST /collect** (처음엔 `dry_run=true`).
+다시 실행해도 같은 행사가 두 번 생기지 않는다. 자세한 방법·오류 대처·출처 표시: **[docs/COLLECT.md](docs/COLLECT.md)**
 
 ## 시연 화면
 
@@ -87,6 +94,7 @@ npx --yes serve -l 5500
 
 - [로컬 스택 정리 / 저장소 인계](docs/HANDOFF.md)
 - [키 체크리스트](docs/KEYS.md)
+- [공공 API 수집](docs/COLLECT.md)
 - [배포](docs/DEPLOY.md)
 - [API](docs/api.md)
 - [DB](docs/db.md)
@@ -94,6 +102,7 @@ npx --yes serve -l 5500
 
 ## 보안
 
-- `.env` / Render·Vercel 시크릿에만 키 보관. GitHub 커밋 금지
+- `.env` / Render·Vercel 시크릿에만 키 보관. GitHub 커밋 금지 (공공 API 키는 Vercel·`config.js`에도 넣지 않음)
+- 공공 API 자료는 출처 표시 필수: KOPIS·한국관광공사 (설명 끝에 자동으로 붙음)
 - QR은 닉네임 권장, 실이용자 개인정보 AI 입력 금지
 - Supabase `service_role` 키는 이 구조에서 프론트에 넣지 않음

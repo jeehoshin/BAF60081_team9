@@ -35,12 +35,18 @@
 | `DATABASE_URL` | Supabase URI |
 | `CORS_ORIGINS` | `https://<vercel-app>.vercel.app` (로컬 테스트면 함께 콤마 추가) |
 | `USE_MEMORY` | `0` |
+| `KOPIS_API_KEY` | (공공 API 수집용) KOPIS 인증키 |
+| `TOUR_API_KEY` | (공공 API 수집용) TourAPI Decoding 키 |
+| `COLLECT_TOKEN` | (공공 API 수집용) `POST /collect` 실행 비밀 문자열 |
 
 6. 배포 후 확인
    - `https://<service>.onrender.com/health` → `"mode":"database"`
    - `https://<service>.onrender.com/docs` → Swagger (발표 자료 주소)
 
 무료 플랜은 잠들면 첫 응답이 느리다. **발표 직전 `/health` 한 번 호출**해 깨워 둔다.
+
+7. 공공 API 행사 넣기: Swagger `POST /collect` (`x-collect-token` 입력, 처음엔 `dry_run=true`) → [COLLECT.md](COLLECT.md)
+   - 이번 버전부터 시작할 때 `activities`에 새 칸(ends_at 등)이 없으면 자동으로 추가된다
 
 ---
 

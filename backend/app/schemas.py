@@ -29,9 +29,12 @@ class ActivityCreate(BaseModel):
     place: str | None = None
     region: str | None = None
     starts_at: datetime | None = None
+    ends_at: datetime | None = None
     cost: str | None = None
     description: str | None = None
     source: str = "user"
+    source_url: str | None = None
+    image_url: str | None = None
     lat: float | None = None
     lng: float | None = None
 
@@ -45,9 +48,13 @@ class ActivityOut(BaseModel):
     place: str | None = None
     region: str | None = None
     starts_at: datetime | None = None
+    ends_at: datetime | None = None
     cost: str | None = None
     description: str | None = None
     source: str
+    external_id: str | None = None
+    source_url: str | None = None
+    image_url: str | None = None
     lat: float | None = None
     lng: float | None = None
     created_at: datetime
