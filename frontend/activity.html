@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>활동 상세 · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topnav" data-active="home"></nav>
+
+    <div class="userbox" id="userBox"></div>
+    <section class="panel" id="detail">
+      <p class="status">불러오는 중…</p>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const { api, renderUserBox, UserStore, escapeHtml, fmtDate, setStatus } = window.Gachi;
+    renderUserBox();
+    const id = new URLSearchParams(location.search).get("id");
+    const root = document.getElementById("detail");
+    let activeMeetupId = null;
+    let pollTimer = null;
+
+    async function loadMessages(meetupId) {
+      const box = document.getElementById("chatBox");
+      if (!box) return;
+      try {
+        const msgs = await api(`/meetups/${meetupId}/messages`);
+        box.innerHTML = msgs.map((m) => `
+          <div class="chat-line">
+            <strong>${escapeHtml(m.nickname || "?")}</strong>
+            <span>${escapeHtml(m.body)}</span>
+            <em>${fmtDate(m.created_at)}</em>
+          </div>
+        `).join("") || `<p class="hint">첫 메시지를 남겨보세요. 라이브 보드에도 뜹니다.</p>`;
+        box.scrollTop = box.scrollHeight;
+      } catch (e) {
+        box.innerHTML = `<p class="status err">${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    async function openChat(meetupId) {
+      activeMeetupId = meetupId;
+      document.querySelectorAll("[data-chat]").forEach((b) => b.classList.toggle("active-chat", Number(b.dataset.chat) === meetupId));
+      const people = await api(`/meetups/${meetupId}/participants`);
+      document.getElementById("peopleBox").innerHTML = people.map((p) =>
+        `<span class="pill">${escapeHtml(p.nickname || "user"+p.user_id)}${p.age_group ? " · " + escapeHtml(p.age_group) : ""}</span>`
+      ).join(" ") || `<span class="hint">참여자 없음</span>`;
+      await loadMessages(meetupId);
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(() => loadMessages(meetupId), 3000);
+    }
+
+    async function load() {
+      if (!id) {
+        root.innerHTML = `<p class="status err">활동 id가 없습니다.</p>`;
+        return;
+      }
+      try {
+        const data = await api(`/activities/${id}`);
+        const a = data.activity;
+        const keepMeetup = activeMeetupId;
+        root.innerHTML = `
+          <div class="badge">${escapeHtml(a.activity_type)} · ${escapeHtml(a.source)}</div>
+          <h2 style="margin-top:10px">${escapeHtml(a.title)}</h2>
+          <p class="hint">${escapeHtml(a.description || "")}</p>
+          <div class="meta" style="margin-bottom:14px">
+            <span>${escapeHtml(a.region || "")}</span>
+            <span>${escapeHtml(a.place || "")}</span>
+            <span>${fmtDate(a.starts_at)}</span>
+            <span>${escapeHtml(a.cost || "")}</span>
+            <span>좋아요 ${data.like_count}</span>
+          </div>
+          <div class="actions">
+            <button type="button" id="likeBtn" class="secondary">좋아요</button>
+          </div>
+          <h2 style="margin-top:22px">모임 · 같이 가기</h2>
+          <p class="hint">참여하면 닉네임이 보이고, 모임 채팅으로 서로 이야기할 수 있습니다.</p>
+          <div class="grid cards" id="meetups"></div>
+          <form id="meetupForm" class="grid" style="gap:10px; margin-top:16px; max-width:480px">
+            <h2>모임 개설</h2>
+            <label>모임 이름 <input name="name" required placeholder="같이 가요"></label>
+            <label>집결 시간 <input name="meet_at" type="datetime-local"></label>
+            <label>정원 <input name="capacity" type="number" min="2" value="6"></label>
+            <button type="submit">개설하기</button>
+            <p class="status" id="formStatus"></p>
+          </form>
+          <div class="chat-panel" id="chatPanel">
+            <h2>모임 채팅</h2>
+            <p class="hint">위에서 모임을 고르거나 참여하면 채팅이 열립니다.</p>
+            <div id="peopleBox" class="people"></div>
+            <div class="chat-box" id="chatBox"></div>
+            <form id="chatForm" class="chat-form">
+              <input name="body" maxlength="280" placeholder="예: 6시 정문에서 만나요!" required>
+              <button type="submit">보내기</button>
+            </form>
+            <p class="status" id="chatStatus"></p>
+          </div>
+        `;
+        const meetups = document.getElementById("meetups");
+        meetups.innerHTML = data.meetups.map((m) => `
+          <article class="card">
+            <h3>${escapeHtml(m.name)}</h3>
+            <div class="meta">
+              <span>${fmtDate(m.meet_at)}</span>
+              <span>${m.participant_count} / ${m.capacity}명</span>
+            </div>
+            <div class="actions">
+              <button type="button" data-join="${m.meetup_id}">참여</button>
+              <button type="button" class="secondary" data-chat="${m.meetup_id}">채팅 보기</button>
+            </div>
+          </article>
+        `).join("") || `<p class="hint">아직 모임이 없습니다. 첫 모임을 열어보세요.</p>`;
+
+        document.getElementById("likeBtn").onclick = async () => {
+          const user = UserStore.get();
+          if (!user) return location.href = "register.html";
+          try {
+            await api(`/activities/${id}/likes`, { method: "POST", body: JSON.stringify({ user_id: user.user_id }) });
+            load();
+          } catch (e) { alert(e.message); }
+        };
+
+        meetups.querySelectorAll("[data-join]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const user = UserStore.get();
+            if (!user) return location.href = "register.html";
+            try {
+              await api(`/meetups/${btn.dataset.join}/participants`, {
+                method: "POST",
+                body: JSON.stringify({ user_id: user.user_id }),
+              });
+              await load();
+              openChat(Number(btn.dataset.join));
+            } catch (e) { alert(e.message); }
+          });
+        });
+        meetups.querySelectorAll("[data-chat]").forEach((btn) => {
+          btn.addEventListener("click", () => openChat(Number(btn.dataset.chat)));
+        });
+
+        document.getElementById("meetupForm").onsubmit = async (e) => {
+          e.preventDefault();
+          const user = UserStore.get();
+          if (!user) return location.href = "register.html";
+          const fd = new FormData(e.target);
+          const payload = {
+            activity_id: Number(id),
+            host_id: user.user_id,
+            name: fd.get("name"),
+            capacity: Number(fd.get("capacity") || 6),
+          };
+          const meetAt = fd.get("meet_at");
+          if (meetAt) payload.meet_at = meetAt;
+          try {
+            const m = await api("/meetups", { method: "POST", body: JSON.stringify(payload) });
+            setStatus(document.getElementById("formStatus"), "모임이 개설되었습니다.", true);
+            await load();
+            openChat(m.meetup_id);
+          } catch (err) {
+            setStatus(document.getElementById("formStatus"), err.message, false);
+          }
+        };
+
+        document.getElementById("chatForm").onsubmit = async (e) => {
+          e.preventDefault();
+          const user = UserStore.get();
+          if (!user) return location.href = "register.html";
+          if (!activeMeetupId) {
+            setStatus(document.getElementById("chatStatus"), "먼저 모임을 선택하거나 참여하세요.", false);
+            return;
+          }
+          const body = new FormData(e.target).get("body");
+          try {
+            await api(`/meetups/${activeMeetupId}/messages`, {
+              method: "POST",
+              body: JSON.stringify({ user_id: user.user_id, body }),
+            });
+            e.target.reset();
+            setStatus(document.getElementById("chatStatus"), "전송됨", true);
+            loadMessages(activeMeetupId);
+          } catch (err) {
+            setStatus(document.getElementById("chatStatus"), err.message, false);
+          }
+        };
+
+        if (keepMeetup) openChat(keepMeetup);
+        else if (data.meetups[0]) openChat(data.meetups[0].meetup_id);
+      } catch (e) {
+        root.innerHTML = `<p class="status err">${escapeHtml(e.message)}</p>`;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

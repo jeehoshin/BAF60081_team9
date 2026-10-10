@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>합류 · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topnav" data-active="register"></nav>
+
+    <header class="hero with-buddy">
+      <div>
+        <div class="badge">QR · 닉네임으로 가볍게</div>
+        <h1>같이 갈래?</h1>
+        <p>실명 대신 닉네임으로 합류해요. 넙죽이가 출석부에 적어둘게요.</p>
+      </div>
+      <img class="buddy-sm" data-mascot src="mascot.svg" alt="">
+    </header>
+
+    <section class="panel">
+      <div class="grid form-split">
+        <div>
+          <h2>캠퍼스 합류하기</h2>
+          <p class="hint">등록되면 이 휴대폰에만 저장되고, 모임 참여·채팅에 쓰입니다.</p>
+          <form id="form" class="grid" style="gap:12px; max-width:420px">
+            <label>닉네임 * <input name="nickname" required maxlength="64" placeholder="예: 유성러너"></label>
+            <label>성별
+              <select name="gender">
+                <option value="">선택 안 함</option>
+                <option>남</option><option>여</option><option>기타</option>
+              </select>
+            </label>
+            <label>연령대
+              <select name="age_group">
+                <option value="">선택 안 함</option>
+                <option>10대</option><option>20대</option><option>30대</option><option>40대+</option>
+              </select>
+            </label>
+            <label>선호 유형 <input name="preferred_types" placeholder="러닝,축제"></label>
+            <label>선호 지역 <input name="preferred_regions" placeholder="유성구"></label>
+            <button type="submit" class="bun">합류하고 시작</button>
+          </form>
+          <p class="status" id="status"></p>
+        </div>
+        <aside class="side-note">
+          <img data-mascot src="mascot.svg" alt="넙죽이">
+          <h3>멍 때리다가도 OK</h3>
+          <p>발표장에서 QR만 찍으면 라이브 보드에 닉네임이 올라가요. 친구 찾아 바로 모임에 들어가 보세요.</p>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const { api, UserStore, setStatus } = window.Gachi;
+    const existing = UserStore.get();
+    if (existing) {
+      setStatus(document.getElementById("status"), `이미 ${existing.nickname}으로 합류됨 (id ${existing.user_id})`, true);
+    }
+
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const payload = Object.fromEntries(fd.entries());
+      Object.keys(payload).forEach((k) => { if (!payload[k]) delete payload[k]; });
+      try {
+        const user = await api("/users", { method: "POST", body: JSON.stringify(payload) });
+        UserStore.set(user);
+        setStatus(document.getElementById("status"), `환영해요, ${user.nickname}!`, true);
+        setTimeout(() => { location.href = "index.html"; }, 700);
+      } catch (err) {
+        setStatus(document.getElementById("status"), err.message, false);
+      }
+    });
+  </script>
+</body>
+</html>

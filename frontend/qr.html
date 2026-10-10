@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topnav" data-active="qr"></nav>
+
+    <header class="hero with-buddy">
+      <div>
+        <div class="badge">현장 합류</div>
+        <h1>같이 갈래?</h1>
+        <p>스캔하면 닉네임 합류 화면으로 가요. 카이스트 친구들, 지금 바로 들어와!</p>
+      </div>
+      <img class="buddy-sm" data-mascot src="mascot.svg" alt="">
+    </header>
+
+    <section class="panel qr-panel">
+      <img data-mascot src="mascot.svg" alt="" style="width:96px;margin-bottom:4px">
+      <div id="qrcode"></div>
+      <p class="hint" id="qrUrl"></p>
+      <div class="actions">
+        <a href="register.html"><button type="button" class="bun">합류 화면 열기</button></a>
+        <a href="live.html"><button type="button" class="secondary">라이브 보드</button></a>
+      </div>
+    </section>
+  </div>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const url = new URL("register.html", location.href).href;
+    document.getElementById("qrUrl").textContent = url;
+    new QRCode(document.getElementById("qrcode"), {
+      text: url,
+      width: 220,
+      height: 220,
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  </script>
+</body>
+</html>

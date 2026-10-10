@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>모임 지도 · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap wide">
+    <nav class="topnav" data-active="map"></nav>
+
+    <header class="map-head">
+      <div>
+        <h1>오늘 누가, 어디서 모여?</h1>
+        <p>핀을 누르면 누가 · 언제 · 어디서 · 어떻게가 한눈에 보여요. 지도를 클릭하면 그 자리에서 바로 모임을 열 수 있어요.</p>
+      </div>
+      <div class="chip-row" id="typeFilter">
+        <button type="button" class="chip-btn on" data-type="">전체</button>
+        <button type="button" class="chip-btn" data-type="러닝">🏃 러닝</button>
+        <button type="button" class="chip-btn" data-type="공연">🎵 공연</button>
+        <button type="button" class="chip-btn" data-type="축제">🎉 축제</button>
+        <button type="button" class="chip-btn" data-type="전시">🖼️ 전시</button>
+      </div>
+    </header>
+
+    <div class="userbox" id="userBox"></div>
+
+    <div class="map-layout">
+      <aside class="map-side">
+        <div class="side-head">
+          <h2>다가오는 모임</h2>
+          <span class="muted" id="count"></span>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </aside>
+      <div class="map-main">
+        <div id="map"></div>
+        <p class="map-tip">💡 지도를 클릭해 집결 장소를 찍고 모임을 열어보세요</p>
+      </div>
+    </div>
+
+    <dialog id="createDlg" class="dlg">
+      <form id="createForm" method="dialog" class="grid" style="gap:10px">
+        <h2>여기서 모임 열기</h2>
+        <p class="hint" id="pickedPos"></p>
+        <label>어떤 활동? <select name="activity_id" id="activitySelect" required></select></label>
+        <label>모임 이름 <input name="name" required placeholder="예: 정문에서 같이 출발"></label>
+        <label>집결 장소 이름 <input name="place_name" required placeholder="예: KAIST 정문 시계탑"></label>
+        <div class="grid two">
+          <label>언제 <input name="meet_at" type="datetime-local" required></label>
+          <label>정원 <input name="capacity" type="number" min="2" value="6"></label>
+        </div>
+        <label>어떻게 <textarea name="how" placeholder="예: 정문 집결 → 도보 10분 → 끝나고 학식"></textarea></label>
+        <div class="actions">
+          <button type="submit" class="bun" value="ok">모임 열기</button>
+          <button type="button" class="secondary" id="cancelCreate">취소</button>
+        </div>
+        <p class="status" id="createStatus"></p>
+      </form>
+    </dialog>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script src="map.js"></script>
+</body>
+</html>

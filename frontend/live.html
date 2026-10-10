@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>라이브 보드 · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topnav" data-active="live"></nav>
+
+    <header class="hero with-buddy">
+      <div>
+        <div class="badge">발표 프로젝터 · 3초마다 갱신</div>
+        <h1>같이 갈래?</h1>
+        <p>QR로 들어온 친구, 모임 참여, 메시지가 실시간으로 쌓입니다. 넙죽이가 출석 체크 중!</p>
+      </div>
+      <img class="buddy-sm" data-mascot src="mascot.svg" alt="">
+    </header>
+
+    <section class="grid stats" id="kpi"></section>
+
+    <div class="live-grid">
+      <section class="panel">
+        <h2>방금 등록</h2>
+        <ul class="feed" id="users"></ul>
+      </section>
+      <section class="panel">
+        <h2>모임 참여</h2>
+        <ul class="feed" id="joins"></ul>
+      </section>
+      <section class="panel">
+        <h2>모임 메시지</h2>
+        <ul class="feed" id="messages"></ul>
+      </section>
+      <section class="panel">
+        <h2>열린 모임</h2>
+        <ul class="feed" id="meetups"></ul>
+      </section>
+    </div>
+    <p class="status" id="status">연결 중…</p>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const { api, setStatus, escapeHtml, fmtDate } = window.Gachi;
+
+    function list(el, items, render) {
+      el.innerHTML = items.length
+        ? items.map((i) => `<li>${render(i)}</li>`).join("")
+        : `<li class="muted">아직 없음 — QR로 들어와 보세요</li>`;
+    }
+
+    async function tick() {
+      try {
+        const data = await api("/live");
+        const c = data.counts;
+        document.getElementById("kpi").innerHTML = `
+          <div class="stat"><span>이용자</span><b>${c.users}</b></div>
+          <div class="stat"><span>활동</span><b>${c.activities}</b></div>
+          <div class="stat"><span>모임</span><b>${c.meetups}</b></div>
+          <div class="stat"><span>참여</span><b>${c.participants}</b></div>
+          <div class="stat"><span>메시지</span><b>${c.messages}</b></div>
+        `;
+        list(document.getElementById("users"), data.recent_users, (u) =>
+          `<strong>${escapeHtml(u.nickname)}</strong> <span class="muted">${escapeHtml(u.age_group || "")} · ${escapeHtml(u.preferred_types || "")}</span>`
+        );
+        list(document.getElementById("joins"), data.recent_joins, (j) =>
+          `<strong>${escapeHtml(j.nickname)}</strong> → ${escapeHtml(j.meetup_name)} <span class="muted">(${escapeHtml(j.activity_title)})</span>`
+        );
+        list(document.getElementById("messages"), data.recent_messages, (m) =>
+          `<strong>${escapeHtml(m.nickname)}</strong> @${escapeHtml(m.meetup_name)}: ${escapeHtml(m.body)}`
+        );
+        list(document.getElementById("meetups"), data.open_meetups, (m) =>
+          `<strong>${escapeHtml(m.name)}</strong> <span class="muted">${m.participant_count}/${m.capacity} · 호스트 ${escapeHtml(m.host)}</span><br><span class="muted">${escapeHtml(m.activity_title)}</span>`
+        );
+        setStatus(document.getElementById("status"), `갱신 ${new Date().toLocaleTimeString("ko-KR")}`, true);
+      } catch (e) {
+        setStatus(document.getElementById("status"), `연결 실패: ${e.message}`, false);
+      }
+    }
+    tick();
+    setInterval(tick, 3000);
+  </script>
+</body>
+</html>

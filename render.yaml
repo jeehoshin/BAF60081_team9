@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: gachi-galae-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Supabase Connection URI (Transaction pooler 권장)
+      - key: DATABASE_URL
+        sync: false
+      # Vercel 프론트 URL 포함. 예: https://xxx.vercel.app,http://127.0.0.1:5500
+      - key: CORS_ORIGINS
+        sync: false
+      # 배포·팀 시연은 반드시 0 (Supabase 사용)
+      - key: USE_MEMORY
+        value: "0"
+      - key: TZ
+        value: Asia/Seoul

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>데이터 분석 · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topnav" data-active="stats"></nav>
+
+    <header class="hero with-buddy">
+      <div>
+        <div class="badge">수집 데이터 · 기초 분석</div>
+        <h1>같이 갈래?</h1>
+        <p>지역·유형 분포와 모임 현황. 친구가 합류할수록 그래프가 살아납니다.</p>
+      </div>
+      <img class="buddy-sm" data-mascot src="mascot.svg" alt="">
+    </header>
+
+    <section class="panel">
+      <h2>한눈에 보기</h2>
+      <div class="grid stats" id="kpi"></div>
+      <p class="status" id="status">불러오는 중…</p>
+    </section>
+
+    <section class="panel">
+      <h2>활동 · 지역별</h2>
+      <div class="barlist" id="byRegion"></div>
+    </section>
+    <section class="panel">
+      <h2>활동 · 유형별</h2>
+      <div class="barlist" id="byType"></div>
+    </section>
+    <section class="panel">
+      <h2>이용자 · 연령대</h2>
+      <div class="barlist" id="byAge"></div>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script>
+    const { api, setStatus, escapeHtml } = window.Gachi;
+
+    function bars(el, items) {
+      const max = Math.max(...items.map((i) => i.count), 1);
+      el.innerHTML = items.map((i) => `
+        <div class="barrow">
+          <span>${escapeHtml(i.key)}</span>
+          <div class="bartrack"><i style="width:${(i.count / max) * 100}%"></i></div>
+          <span>${i.count}</span>
+        </div>
+      `).join("") || `<p class="hint">데이터 없음</p>`;
+    }
+
+    async function load() {
+      try {
+        const [acts, meets, users] = await Promise.all([
+          api("/stats/activities"),
+          api("/stats/meetups"),
+          api("/stats/users"),
+        ]);
+        document.getElementById("kpi").innerHTML = `
+          <div class="stat"><span>수집 활동</span><b>${acts.total}</b></div>
+          <div class="stat"><span>열린 모임</span><b>${meets.open_meetups}</b></div>
+          <div class="stat"><span>참여 인원</span><b>${meets.participants}</b></div>
+          <div class="stat"><span>평균 충원율</span><b>${meets.avg_fill_rate_percent}%</b></div>
+          <div class="stat"><span>등록 이용자</span><b>${users.total}</b></div>
+        `;
+        bars(document.getElementById("byRegion"), acts.by_region);
+        bars(document.getElementById("byType"), acts.by_type);
+        bars(document.getElementById("byAge"), users.by_age_group);
+        setStatus(document.getElementById("status"), "최신 통계 반영", true);
+      } catch (e) {
+        setStatus(document.getElementById("status"), e.message, false);
+      }
+    }
+    load();
+    setInterval(load, 15000);
+  </script>
+</body>
+</html>

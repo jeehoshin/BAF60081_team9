@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>같이 갈래? · KAIST 친구 모임</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap">
+    <nav class="topnav" data-active="home"></nav>
+
+    <header class="hero-campus">
+      <div class="skyline" aria-hidden="true"></div>
+      <div class="float-bits" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="campus-tag">유성 · KAIST 캠퍼스 친구들 <b>넙죽이</b>와 함께</div>
+          <h1>같이 <em>갈래?</em></h1>
+          <p>이번 주말 뭐 하지? 공연·축제·전시·러닝을 고르고, 카이스트 친구랑 바로 모여요. 멍 때리다가도 “갈래?” 한 마디면 충분.</p>
+          <div class="cta-row">
+            <a href="map.html"><button type="button" class="bun">🗺️ 지도에서 모임 찾기</button></a>
+            <a href="talk.html"><button type="button" class="secondary">💬 내 모임톡</button></a>
+            <a href="qr.html"><button type="button" class="ghost">QR로 합류</button></a>
+          </div>
+        </div>
+        <div class="mascot-wrap">
+          <img data-mascot src="mascot.svg" alt="넙죽이 — 캠퍼스 모임 친구">
+          <div class="mascot-caption">튀소 들고 대기 중…</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="chip-row">
+      <span class="chip">🎓 캠퍼스 후기 환영</span>
+      <span class="chip">🥖 성심당 경유 모임 OK</span>
+      <span class="chip">🗺️ 누가·언제·어디서·어떻게 지도로</span>
+      <span class="chip">💬 모임톡으로 집결</span>
+      <span class="chip">📡 발표장 라이브 보드</span>
+    </div>
+
+    <div class="userbox" id="userBox"></div>
+
+    <section class="panel" id="browse">
+      <h2>오늘 뭐 하지?</h2>
+      <p class="hint">지역·취향을 고르면 같이 갈 사람을 바로 모을 수 있어요.</p>
+      <div class="grid filters">
+        <label>지역
+          <select id="region">
+            <option value="">전체</option>
+            <option>유성구</option><option>서구</option>
+            <option>마포구</option><option>종로구</option><option>중구</option>
+            <option>용산구</option><option>강남구</option><option>송파구</option>
+            <option>영등포구</option>
+          </select>
+        </label>
+        <label>유형
+          <select id="type">
+            <option value="">전체</option>
+            <option>공연</option><option>축제</option><option>전시</option><option>러닝</option>
+          </select>
+        </label>
+        <button type="button" id="searchBtn">찾아보기</button>
+      </div>
+      <p class="status" id="listStatus">불러오는 중…</p>
+      <div class="grid cards" id="list" style="margin-top:14px"></div>
+    </section>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script src="home.js"></script>
+</body>
+</html>

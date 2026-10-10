@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>모임톡 · 같이 갈래?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=campus4">
+</head>
+<body>
+  <div class="wrap wide">
+    <nav class="topnav" data-active="talk"></nav>
+
+    <div class="talk-layout">
+      <aside class="talk-list">
+        <div class="side-head">
+          <h2>내 모임톡</h2>
+          <a href="map.html" class="muted">+ 지도에서 찾기</a>
+        </div>
+        <div id="rooms"></div>
+      </aside>
+
+      <section class="talk-room" id="room">
+        <div class="talk-empty">
+          <img data-mascot src="mascot.svg" alt="">
+          <h3>모임을 고르면 톡방이 열려요</h3>
+          <p class="muted">지도나 활동 목록에서 “같이 갈래!”를 누르면 여기로 와요.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script src="talk.js"></script>
+</body>
+</html>
