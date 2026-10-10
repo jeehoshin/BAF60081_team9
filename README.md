@@ -93,6 +93,7 @@ npx --yes serve -l 5500
 ## 문서
 
 - [로컬 스택 정리 / 저장소 인계](docs/HANDOFF.md)
+- [기획 요구사항 (기획 문서 사본)](docs/PLANNING.md)
 - [키 체크리스트](docs/KEYS.md)
 - [공공 API 수집](docs/COLLECT.md)
 - [배포](docs/DEPLOY.md)

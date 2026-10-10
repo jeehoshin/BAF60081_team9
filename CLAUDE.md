@@ -9,6 +9,7 @@
 - 최종 발표: 2026-10-21(수). 그 전까지는 큰 구조 변경보다 시연이 안정적으로 도는 것이 우선이다.
 - 팀 5명 중 개발자는 1명이다. 설명·문서·커밋 메시지·PR 설명은 비개발자도 읽을 수 있는 쉬운 한국어로 쓴다. git 명령을 쓸 때는 무엇을 왜 하는지 한 줄로 알려준다.
 - 역할: 지호(저장소 주인 `jeehoshin`, 프론트·배포), 동주(백엔드·QR), 영선(외부 API), 연경(발표), 찬휘(기획, KOPIS·TourAPI 키 보유).
+- 기획 요구사항은 `docs/PLANNING.md`(기획 문서 사본)에 있다. 맨 위 '지금 코드와 다른 점'을 먼저 본다.
 
 ## 구조
 
@@ -47,11 +48,12 @@ python -m unittest discover tests -v
 ## 지킬 것
 
 - main에 바로 push하지 않는다. 브랜치를 만들고 PR로 올린다 (리뷰는 지호).
+- 기획(`docs/PLANNING.md`)과 코드가 다르면 한쪽에 맞춰 임의로 고치지 않는다. 어느 쪽으로 맞출지 먼저 물어본다.
 - 비밀값(`DATABASE_URL`, `KOPIS_API_KEY`, `TOUR_API_KEY`, `COLLECT_TOKEN`)은 `.env`와 Render 환경변수에만 둔다. 커밋, `frontend/`, 채팅에 넣지 않는다.
 - 줄바꿈: 대부분의 파일이 CRLF다. 고치거나 새로 만드는 파일도 CRLF로 맞춘다. 원래 LF인 파일(`.env.example`, `.gitignore`, `*.json`, `docs/*.html` 등)은 그대로 둔다. 패치는 `git am --keep-cr`로 적용한다.
 - `activities` 칸을 바꿀 때는 `models.py`, `schemas.py`, `docs/db_schema.sql`, 그리고 기존 Supabase 테이블용 `database._ADDED_COLUMNS`를 함께 고친다.
 - 모두가 같이 쓰는 값: 유형은 `공연`/`축제`/`전시`/`러닝`, `region`은 `'OO구'` 형식(서울 25개 구 + 대전 5개 구. '중구'는 두 도시에 다 있다).
-- 공공 API 자료는 출처를 표시한다. 수집기가 `description` 끝에 붙인다. KOPIS 예매·관객 통계를 화면에 쓰게 되면 집계기간·집계대상·발권 기준 안내도 필요하다 (`docs/COLLECT.md`).
+- 공공 API 자료는 출처를 표시한다. 수집기가 `description` 끝에 붙인다. 기획은 KOPIS 자료 상세 화면에 집계기간·집계대상·발권 기준 안내도 넣기로 했지만 아직 없다 (정확한 문구는 영선 확인).
 
 ## 공공 API 메모
 
@@ -64,4 +66,5 @@ python -m unittest discover tests -v
 - [ ] `feat/public-api-collect` 브랜치(공공 API 수집)를 GitHub에 올리고 PR 만들기. 찬휘 계정이 저장소 협업자 초대를 수락해야 push할 수 있다.
 - [ ] Render 환경변수에 `KOPIS_API_KEY`, `TOUR_API_KEY`, `COLLECT_TOKEN`을 넣고 Swagger `POST /collect`를 `dry_run=true`로 실행하기. 실제 키로는 아직 호출해 보지 않았다 (모의 응답 테스트만 통과).
 - [ ] `seed.py`의 가짜 행사 2건(넙죽이 팬아트 전시, 대전 재즈 나잇)이 `source="API"`로 되어 있어 실제 API 자료로 오해받을 수 있다. 정리하기.
+- [ ] 기획안과 코드가 다른 점(`docs/PLANNING.md` 맨 위 표)을 어느 쪽으로 맞출지 팀에서 정하기.
 - [ ] (선택) 한국문화정보원 전시 API(`CULTURE_API_KEY`)는 수집기에 아직 연결하지 않았다.
