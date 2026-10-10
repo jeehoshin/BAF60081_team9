@@ -37,7 +37,7 @@ class Activity(Base):
     ends_at: Mapped[datetime | None] = mapped_column(DateTime)  # 기간이 있는 공연·축제의 마지막 날
     cost: Mapped[str | None] = mapped_column(String(64))
     description: Mapped[str | None] = mapped_column(Text)
-    source: Mapped[str] = mapped_column(String(32), default="user")  # user / API / KOPIS / 한국관광공사
+    source: Mapped[str] = mapped_column(String(32), default="user")  # user / KOPIS / 한국관광공사
     external_id: Mapped[str | None] = mapped_column(String(64))  # 'KOPIS:PF302715', 'TOUR:2786391'
     source_url: Mapped[str | None] = mapped_column(String(512))  # 원본 페이지
     image_url: Mapped[str | None] = mapped_column(String(512))  # 포스터·대표 이미지
