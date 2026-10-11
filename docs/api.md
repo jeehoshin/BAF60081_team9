@@ -90,6 +90,33 @@ QR 이용자 등록.
 
 분석 페이지용 집계.
 
+## GET /stats/kopis
+
+KOPIS 공연 통계(전국) 집계. 분석 페이지 지표 A(시·도별), B(장르별), C(요일별)에 쓴다. 저장된 달을 모두 합쳐 계산한다.
+
+| 응답 칸 | 내용 |
+|---------|------|
+| `available` | 통계가 저장돼 있으면 `true`. 없으면 `false`와 `message` |
+| `period` | 집계 기간 (`from`, `to`) |
+| `by_area` | 시·도별 판매액·상연 횟수·순 관객 수와 비중(%). 권역 소계·합계 줄은 빼고, 비중은 합계 줄로 나눈 값. 판매액 큰 순 |
+| `by_genre` | 장르별 판매액·상연 횟수와 각각의 비중(%) |
+| `by_weekday` | 월~일, 요일별 하루 평균 상연 횟수·순 관객 수·판매액 |
+| `highlights` | 서울·대전 판매액 비중, 서울·대전 상연 횟수 비중, 주말(토·일) 관객 비중 |
+| `notice`, `attribution` | KOPIS 집계 안내 문구와 출처. 화면에 그대로 표시 |
+
+## POST /collect/kopis-stats
+
+KOPIS 통계 API(시·도별 `prfstsArea`, 장르별 `prfstsCate`, 일별 `prfstsTotal`)에서 지난달부터 거꾸로 `months`개월(기본 3, 이번 달 제외)을 받아 `kopis_stats`에 저장한다. 같은 달을 다시 받으면 그 달 행을 새로 바꾼다. `POST /collect`와 같은 `x-collect-token`이 필요하다.
+
+| 쿼리 | 기본값 | 설명 |
+|------|--------|------|
+| `months` | `3` | 몇 달 (1~12) |
+| `dry_run` | `false` | `true`면 저장하지 않고 결과만 |
+
+**응답** `200` — `period`, `collected`(받은 줄), `saved`, 종류·달별 `results`(받은 줄, 오류), `check.seoul_amount_share_percent`
+
+- `401` 토큰 불일치 · `503` `COLLECT_TOKEN` 또는 `KOPIS_API_KEY` 미설정
+
 ## GET /live
 
 발표용 라이브 보드. 최근 등록·참여·메시지·열린 모임 + 카운트.

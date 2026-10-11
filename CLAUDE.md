@@ -70,4 +70,5 @@ python -m unittest discover tests -v
 - [ ] 이미 시드가 들어간 Supabase DB에는 위 3건이 남아 있을 수 있다. `seed.py`를 고쳐도 기존 행은 지워지지 않으니 확인하고 정리하기.
 - [ ] 기획안과 코드가 다른 점(`docs/PLANNING.md` 맨 위 표)을 어느 쪽으로 맞출지 팀에서 정하기.
 - [x] 한국문화정보원 전시 API(`CULTURE_API_KEY`)를 수집기에 연결했다 (`collectors/culture.py`, 출처 `culture`, 영선, 2026-10-11). 전시는 장기 행사가 많아 `max_span_days` 기본값(90)이면 상당수가 빠진다.
-- [ ] Render 환경변수에 `CULTURE_API_KEY` 넣기.
+- [x] Render 환경변수에 `CULTURE_API_KEY` 넣기 (10/11 첫 수집에서 한국문화정보원 41건 적재 확인).
+- [x] KOPIS 공연 통계 수집(`collectors/kopis_stats.py`, `POST /collect/kopis-stats`, 테이블 `kopis_stats`)과 분석 API `GET /stats/kopis`, 분석 화면 지표 A·B·C를 추가했다 (영선, 2026-10-11). 배포 후 Swagger에서 한 번 실행해야 화면에 나온다.

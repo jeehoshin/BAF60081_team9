@@ -89,3 +89,26 @@ alter table activities add column if not exists external_id varchar(64);
 alter table activities add column if not exists source_url varchar(512);
 alter table activities add column if not exists image_url varchar(512);
 create unique index if not exists uq_activities_external_id on activities (external_id);
+
+-- KOPIS 공연 통계 (분석 전용, 2026-10). 백엔드가 시작할 때 없으면 자동으로 만든다.
+-- kind: area(시·도별, level = 시도/권역/합계) / genre(장르별) / day(일별). 한 달 단위로 저장.
+create table if not exists kopis_stats (
+  id serial primary key,
+  kind varchar(16) not null,
+  period_from date not null,
+  period_to date not null,
+  label varchar(64) not null,
+  level varchar(16),
+  open_count integer,          -- 개막 편수 (prfprocnt)
+  show_count integer,          -- 공연 건수 (prfcnt)
+  performance_count integer,   -- 상연 횟수 (prfdtcnt)
+  amount bigint,               -- 티켓 판매액(원)
+  tickets integer,             -- 예매 수 (취소 포함)
+  cancels integer,             -- 취소 수
+  audience integer,            -- 순 관객 수 (장르별은 KOPIS nmrs 원본)
+  seats integer,               -- 좌석 수 (지역별만)
+  amount_share double precision,    -- 판매액 비중 % (장르별만)
+  audience_share double precision,  -- 관객 비중 % (장르별만)
+  collected_at timestamp default now(),
+  constraint uq_kopis_stats_row unique (kind, period_from, period_to, label)
+);

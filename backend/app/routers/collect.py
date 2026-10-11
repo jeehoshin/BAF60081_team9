@@ -4,10 +4,25 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.collectors import CollectOptions, collect
+from app.collectors import kopis_stats
+from app.collectors.common import CollectError
 from app.config import get_settings
 from app.database import get_db
 
 router = APIRouter(prefix="/collect", tags=["collect"])
+
+
+def check_token(x_collect_token: str | None):
+    """x-collect-token이 Render 환경변수 COLLECT_TOKEN과 같은지 확인하고 설정을 돌려준다."""
+    settings = get_settings()
+    if not settings.collect_token:
+        raise HTTPException(
+            status_code=503,
+            detail="COLLECT_TOKEN이 설정되지 않아 수집을 막아 두었어요. Render 환경변수에 COLLECT_TOKEN을 넣고 재배포하세요.",
+        )
+    if not x_collect_token or not hmac.compare_digest(x_collect_token.encode(), settings.collect_token.encode()):
+        raise HTTPException(status_code=401, detail="x-collect-token 값이 COLLECT_TOKEN과 달라요.")
+    return settings
 
 
 @router.post(
@@ -30,14 +45,7 @@ def run_collect(
     dry_run: bool = Query(False, description="true면 저장하지 않고 수집 결과만 보여준다"),
     db: Session = Depends(get_db),
 ):
-    settings = get_settings()
-    if not settings.collect_token:
-        raise HTTPException(
-            status_code=503,
-            detail="COLLECT_TOKEN이 설정되지 않아 수집을 막아 두었어요. Render 환경변수에 COLLECT_TOKEN을 넣고 재배포하세요.",
-        )
-    if not x_collect_token or not hmac.compare_digest(x_collect_token.encode(), settings.collect_token.encode()):
-        raise HTTPException(status_code=401, detail="x-collect-token 값이 COLLECT_TOKEN과 달라요.")
+    settings = check_token(x_collect_token)
     try:
         opts = CollectOptions(
             sources=sources,
@@ -56,3 +64,26 @@ def run_collect(
         culture_key=settings.culture_api_key,
         dry_run=dry_run,
     )
+
+
+
+@router.post(
+    "/kopis-stats",
+    summary="KOPIS 공연 통계 수집 (시·도별 · 장르별 · 일별, 전국)",
+    description=(
+        "KOPIS 통계 API에서 최근 몇 달(이번 달 제외, 기본 3개월)의 시·도별·장르별·일별 공연 통계를 받아 "
+        "kopis_stats 테이블에 저장한다. 같은 달을 다시 받으면 그 달 행을 새로 바꾼다. 분석 페이지 지표 A·B·C에 쓴다.\n\n"
+        "인증키는 Render 환경변수 KOPIS_API_KEY, 실행은 POST /collect와 같은 x-collect-token이 필요하다. 10~20초 걸린다."
+    ),
+)
+def run_kopis_stats(
+    x_collect_token: str | None = Header(default=None, description="Render 환경변수 COLLECT_TOKEN과 같은 값"),
+    months: int = Query(3, ge=1, le=12, description="지난달부터 거꾸로 몇 달 (이번 달은 집계 중이라 뺀다)"),
+    dry_run: bool = Query(False, description="true면 저장하지 않고 결과만 보여준다"),
+    db: Session = Depends(get_db),
+):
+    settings = check_token(x_collect_token)
+    try:
+        return kopis_stats.collect(db, settings.kopis_api_key, months=months, dry_run=dry_run)
+    except CollectError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
