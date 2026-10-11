@@ -322,7 +322,7 @@ class CollectTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             runner.CollectOptions(areas="부산")
         with self.assertRaises(ValueError):
-            runner.CollectOptions(sources="culture")
+            runner.CollectOptions(sources="museum")
         self.assertEqual(runner.CollectOptions(areas=" 대전 , 서울 ").areas, ("대전", "서울"))
 
 
@@ -368,7 +368,7 @@ class ApiTests(unittest.TestCase):
         calls = []
         original = runner.gather_rows
 
-        def fake_gather(opts, kopis_key="", tour_key="", transport=None):
+        def fake_gather(opts, kopis_key="", tour_key="", transport=None, culture_key=""):
             return original(opts, kopis_key, tour_key, make_transport(calls))
 
         with mock.patch.object(runner, "today_kst", return_value=TODAY), mock.patch.object(

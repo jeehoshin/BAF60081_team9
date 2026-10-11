@@ -13,11 +13,11 @@ from datetime import date, timedelta
 import httpx
 from sqlalchemy.orm import Session
 
-from app.collectors import kopis, tourapi
+from app.collectors import culture, kopis, tourapi
 from app.collectors.common import AREAS, DEFAULT_AREAS, CollectError, SourceReport, today_kst
 from app.models import Activity
 
-SOURCES = {"kopis": kopis.SOURCE, "tour": tourapi.SOURCE}
+SOURCES = {"kopis": kopis.SOURCE, "tour": tourapi.SOURCE, "culture": culture.SOURCE}
 
 # 다시 수집할 때 고쳐 쓰는 칸
 UPDATABLE = (
@@ -59,11 +59,12 @@ async def gather_rows(
     kopis_key: str = "",
     tour_key: str = "",
     transport: httpx.AsyncBaseTransport | None = None,
+    culture_key: str = "",
 ) -> tuple[list[dict], list[SourceReport], date, date]:
     window_from = today_kst()
     window_to = window_from + timedelta(days=opts.days)
-    keys = {"kopis": kopis_key.strip(), "tour": tour_key.strip()}
-    env_names = {"kopis": "KOPIS_API_KEY", "tour": "TOUR_API_KEY"}
+    keys = {"kopis": kopis_key.strip(), "tour": tour_key.strip(), "culture": culture_key.strip()}
+    env_names = {"kopis": "KOPIS_API_KEY", "tour": "TOUR_API_KEY", "culture": "CULTURE_API_KEY"}
 
     async with httpx.AsyncClient(
         timeout=httpx.Timeout(20.0, connect=10.0),
@@ -86,6 +87,11 @@ async def gather_rows(
                         rows += await kopis.fetch_area(
                             client, keys[source], area, window_from, window_to, report,
                             per_genre=opts.kopis_per_genre, max_span_days=opts.max_span_days,
+                        )
+                    elif source == "culture":
+                        rows += await culture.fetch_area(
+                            client, keys[source], area, window_from, window_to, report,
+                            max_span_days=opts.max_span_days,
                         )
                     else:
                         rows += await tourapi.fetch_area(
@@ -141,10 +147,11 @@ def collect(
     tour_key: str = "",
     dry_run: bool = False,
     transport: httpx.AsyncBaseTransport | None = None,
+    culture_key: str = "",
 ) -> dict:
     """수집해서 저장하고 요약을 돌려준다. dry_run이면 저장하지 않는다."""
     rows, reports, window_from, window_to = asyncio.run(
-        gather_rows(opts, kopis_key=kopis_key, tour_key=tour_key, transport=transport)
+        gather_rows(opts, kopis_key=kopis_key, tour_key=tour_key, transport=transport, culture_key=culture_key)
     )
     inserted = updated = 0
     if not dry_run:

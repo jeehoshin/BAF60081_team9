@@ -17,7 +17,7 @@
 |---|---|---|
 | `frontend/` | 빌드 없는 HTML/CSS/JS. 공통 함수는 `app.js`의 `window.Gachi` | Vercel (Root Directory = `frontend`) |
 | `backend/app/` | FastAPI + SQLAlchemy. 기능별 API는 `routers/` | Render (`render.yaml`, Python 3.12.7, TZ=Asia/Seoul) |
-| `backend/app/collectors/` | 공공 API 수집기 (KOPIS 공연, 한국관광공사 TourAPI 축제·행사) | `POST /collect` |
+| `backend/app/collectors/` | 공공 API 수집기 (KOPIS 공연, 한국관광공사 TourAPI 축제·행사, 한국문화정보원 전시) | `POST /collect` |
 | `scripts/collect_activities.py` | 같은 수집기를 로컬에서 돌리는 CLI | — |
 | `docs/` | KEYS(키 목록), COLLECT(수집), DEPLOY, api, db, `db_schema.sql` | — |
 
@@ -69,4 +69,5 @@ python -m unittest discover tests -v
 - [x] `seed.py`에서 지어낸 공연·축제·전시 3건(넙죽이 팬아트 전시, 대전 재즈 나잇, 캠퍼스 번개 버스킹)과 딸린 모임을 뺐다. 시드에는 사용자가 올린 형태의 러닝 2건만 남는다.
 - [ ] 이미 시드가 들어간 Supabase DB에는 위 3건이 남아 있을 수 있다. `seed.py`를 고쳐도 기존 행은 지워지지 않으니 확인하고 정리하기.
 - [ ] 기획안과 코드가 다른 점(`docs/PLANNING.md` 맨 위 표)을 어느 쪽으로 맞출지 팀에서 정하기.
-- [ ] (선택) 한국문화정보원 전시 API(`CULTURE_API_KEY`)는 수집기에 아직 연결하지 않았다.
+- [x] 한국문화정보원 전시 API(`CULTURE_API_KEY`)를 수집기에 연결했다 (`collectors/culture.py`, 출처 `culture`, 영선, 2026-10-11). 전시는 장기 행사가 많아 `max_span_days` 기본값(90)이면 상당수가 빠진다.
+- [ ] Render 환경변수에 `CULTURE_API_KEY` 넣기.

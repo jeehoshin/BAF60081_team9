@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # 공공 API 수집 (POST /collect, scripts/collect_activities.py)
     kopis_api_key: str = ""
+    culture_api_key: str = ""  # 한국문화정보원 전시. 공공데이터포털 키 (TourAPI와 같은 키여도 됨)
     tour_api_key: str = ""  # 공공데이터포털 'Decoding' 키 권장 (Encoding 키도 동작)
     collect_token: str = ""  # 비어 있으면 POST /collect를 막는다
 
