@@ -1,10 +1,10 @@
 """
-공공 API(KOPIS 공연 · 한국관광공사 TourAPI 축제·행사) → activities 테이블 적재.
+공공 API(KOPIS 공연 · 한국관광공사 TourAPI 축제·행사 · 한국문화정보원 전시) → activities 테이블 적재.
 
 Render의 Swagger에서 POST /collect로 해도 결과는 같다. 이 스크립트는 로컬에서 돌릴 때 쓴다.
 
 준비:
-1. 프로젝트 루트 .env 에 KOPIS_API_KEY, TOUR_API_KEY, DATABASE_URL (+ USE_MEMORY=0)
+1. 프로젝트 루트 .env 에 KOPIS_API_KEY, TOUR_API_KEY, CULTURE_API_KEY, DATABASE_URL (+ USE_MEMORY=0)
 2. pip install -r backend/requirements.txt
 
 실행 예:
@@ -30,7 +30,7 @@ load_dotenv(ROOT / ".env")
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="공공 API 행사 수집 → activities")
-    parser.add_argument("--sources", default="kopis,tour", help="kopis, tour 중 쉼표로 (기본: 둘 다)")
+    parser.add_argument("--sources", default="kopis,tour,culture", help="kopis, tour, culture 중 쉼표로 (기본: 셋 다)")
     parser.add_argument("--areas", default="서울,대전", help="서울, 대전 중 쉼표로 (기본: 둘 다)")
     parser.add_argument("--days", type=int, default=30, help="오늘부터 며칠 뒤까지 (기본 30)")
     parser.add_argument("--per-genre", type=int, default=6, help="KOPIS 장르마다 지역별 최대 건수 (기본 6)")
@@ -71,6 +71,7 @@ def main() -> int:
             opts,
             kopis_key=settings.kopis_api_key or os.getenv("KOPIS_API_KEY", ""),
             tour_key=settings.tour_api_key or os.getenv("TOUR_API_KEY", ""),
+            culture_key=settings.culture_api_key or os.getenv("CULTURE_API_KEY", ""),
             dry_run=args.dry_run,
         )
     finally:
