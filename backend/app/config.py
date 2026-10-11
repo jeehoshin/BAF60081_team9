@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     use_memory: bool | None = None
     app_name: str = "같이 갈래? API"
 
+    # 공공 API 수집 (POST /collect, scripts/collect_activities.py)
+    kopis_api_key: str = ""
+    tour_api_key: str = ""  # 공공데이터포털 'Decoding' 키 권장 (Encoding 키도 동작)
+    collect_token: str = ""  # 비어 있으면 POST /collect를 막는다
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

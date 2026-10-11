@@ -20,7 +20,7 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    const { api, renderUserBox, UserStore, escapeHtml, fmtDate, setStatus } = window.Gachi;
+    const { api, renderUserBox, UserStore, escapeHtml, fmtDate, fmtPeriod, safeUrl, setStatus } = window.Gachi;
     renderUserBox();
     const id = new URLSearchParams(location.search).get("id");
     const root = document.getElementById("detail");
@@ -66,16 +66,22 @@
         const data = await api(`/activities/${id}`);
         const a = data.activity;
         const keepMeetup = activeMeetupId;
+        const poster = safeUrl(a.image_url);
+        const original = safeUrl(a.source_url);
         root.innerHTML = `
           <div class="badge">${escapeHtml(a.activity_type)} · ${escapeHtml(a.source)}</div>
           <h2 style="margin-top:10px">${escapeHtml(a.title)}</h2>
+          ${poster ? `<img src="${escapeHtml(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer"
+            style="display:block;width:100%;max-width:220px;border-radius:14px;margin:6px 0 10px"
+            onerror="this.remove()">` : ""}
           <p class="hint">${escapeHtml(a.description || "")}</p>
           <div class="meta" style="margin-bottom:14px">
             <span>${escapeHtml(a.region || "")}</span>
             <span>${escapeHtml(a.place || "")}</span>
-            <span>${fmtDate(a.starts_at)}</span>
+            <span>${fmtPeriod(a.starts_at, a.ends_at)}</span>
             <span>${escapeHtml(a.cost || "")}</span>
             <span>좋아요 ${data.like_count}</span>
+            ${original ? `<a href="${escapeHtml(original)}" target="_blank" rel="noopener">원본 보기</a>` : ""}
           </div>
           <div class="actions">
             <button type="button" id="likeBtn" class="secondary">좋아요</button>

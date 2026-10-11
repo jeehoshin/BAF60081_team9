@@ -25,6 +25,29 @@ QR 이용자 등록.
 
 활동 목록. 쿼리: `region`, `type`, `date_from`, `date_to`.
 
+- 날짜 조건은 **기간 겹침**으로 거른다 (공연·축제는 `starts_at`~`ends_at` 기간이 범위와 하루라도 겹치면 나옴)
+- 정렬: 지금 볼 수 있거나 곧 시작하는 것 먼저, 이미 끝난 것은 맨 뒤
+- 응답에 `ends_at`, `external_id`, `source_url`, `image_url`이 추가됐다 (사용자 활동은 대부분 `null`)
+- `source`: `user` · `API`(시드) · `KOPIS` · `한국관광공사`
+
+## POST /collect
+
+공공 API(KOPIS 공연, 한국관광공사 TourAPI 축제·공연·행사)에서 서울·대전 행사를 받아 저장한다.
+헤더 `x-collect-token`에 Render 환경변수 `COLLECT_TOKEN` 값을 넣어야 실행된다. 자세한 건 [COLLECT.md](COLLECT.md).
+
+| 쿼리 | 기본값 | 설명 |
+|------|--------|------|
+| `sources` | `kopis,tour` | 받을 출처 |
+| `areas` | `서울,대전` | 받을 지역 |
+| `days` | `30` | 오늘부터 며칠 뒤까지 (1~60) |
+| `kopis_per_genre` | `6` | KOPIS 장르(9개)마다 지역별 최대 건수 |
+| `max_span_days` | `90` | 이보다 긴 장기·상설 행사 제외 (0 = 제한 없음) |
+| `dry_run` | `false` | `true`면 저장하지 않고 결과만 |
+
+**응답** `200` — `collected`, `inserted`, `updated`, `unchanged`, 출처·지역별 `results`(받은 수, 뺀 이유, 오류), `sample`
+
+- `401` 토큰 불일치 · `503` `COLLECT_TOKEN` 미설정 · `422` 잘못된 옵션
+
 ## GET /activities/{activity_id}
 
 활동 상세 + 모임 목록 + 좋아요 수.

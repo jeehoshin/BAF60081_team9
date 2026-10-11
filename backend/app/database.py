@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -52,3 +52,43 @@ def init_db() -> None:
     from app import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    ensure_schema()
+
+
+# 나중에 추가한 칸. create_all은 이미 있는 테이블에 칸을 더하지 않아서,
+# Supabase에 예전 테이블이 있으면 여기서 채워 넣는다 (없을 때만, 데이터는 그대로).
+_ADDED_COLUMNS = {
+    "activities": {
+        "ends_at": "TIMESTAMP",
+        "external_id": "VARCHAR(64)",
+        "source_url": "VARCHAR(512)",
+        "image_url": "VARCHAR(512)",
+    },
+}
+
+
+def ensure_schema(bind=None) -> list[str]:
+    """빠진 칸과 인덱스를 추가하고, 추가한 칸 이름을 돌려준다."""
+    bind = bind or engine
+    added: list[str] = []
+    inspector = inspect(bind)
+    tables = set(inspector.get_table_names())
+    with bind.begin() as conn:
+        for table, columns in _ADDED_COLUMNS.items():
+            if table not in tables:
+                continue
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
+                    added.append(f"{table}.{name}")
+        if "activities" in tables:
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_activities_external_id "
+                    "ON activities (external_id)"
+                )
+            )
+    if added:
+        print(f"[db] 칸 추가: {', '.join(added)}")
+    return added

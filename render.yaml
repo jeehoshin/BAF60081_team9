@@ -17,6 +17,13 @@ services:
       # 배포·팀 시연은 반드시 0 (Supabase 사용)
       - key: USE_MEMORY
         value: "0"
+      # 공공 API 수집 (POST /collect). docs/COLLECT.md
+      - key: KOPIS_API_KEY
+        sync: false
+      - key: TOUR_API_KEY
+        sync: false
+      - key: COLLECT_TOKEN
+        sync: false
       - key: PYTHON_VERSION
         value: 3.12.7
       - key: TZ

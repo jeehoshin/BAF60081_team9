@@ -41,17 +41,22 @@ Direct 연결(포트 `5432`)도 가능하지만, Render 무료 플랜에서는 p
 
 | # | 이름 (환경변수) | API 정식 명칭 | 제공 기관 | 발급처 | 담당 데이터 | 상태 |
 |---|-----------------|---------------|-----------|--------|-------------|------|
-| 4 | `TOUR_API_KEY` | 한국관광공사_국문 관광정보 서비스_GW | 한국관광공사 | [공공데이터포털](https://www.data.go.kr) 활용신청 | 축제·행사 | ☐ (문서상 10/6 발급) |
-| 5 | `KOPIS_API_KEY` | 공연예술통합전산망(KOPIS) 오픈 API | (재)예술경영지원센터 | [KOPIS](https://www.kopis.or.kr) 오픈API (별도 가입) | 공연 | ☐ (문서상 10/7 발급) |
-| 6 | `CULTURE_API_KEY` | 한국문화정보원_한눈에보는문화정보조회서비스 | 한국문화정보원 | [공공데이터포털](https://www.data.go.kr) | 전시 | ☐ (문서상 10/6 발급) |
+| 4 | `TOUR_API_KEY` | 한국관광공사_국문 관광정보 서비스_GW | 한국관광공사 | [공공데이터포털](https://www.data.go.kr) 활용신청 | 축제·공연·행사 | ✅ 발급 (찬휘) · 수집 연결됨 |
+| 5 | `KOPIS_API_KEY` | 공연예술통합전산망(KOPIS) 오픈 API | (재)예술경영지원센터 | [KOPIS](https://www.kopis.or.kr) 오픈API (별도 가입) | 공연 | ✅ 발급 (찬휘) · 수집 연결됨 |
+| 6 | `CULTURE_API_KEY` | 한국문화정보원_한눈에보는문화정보조회서비스 | 한국문화정보원 | [공공데이터포털](https://www.data.go.kr) | 전시 | 선택 · 수집기에 아직 연결 안 함 |
 
-> 세 키는 **수집 스크립트(`scripts/collect_activities.py`)** 전용이다.  
-> 웹 시연만 먼저 할 때는 더미/시드 데이터로도 동작하며, 발표 자료에는 출처(명칭·기관·URL)를 반드시 적는다.
+> KOPIS·TourAPI 키는 **Render 환경변수**에 넣으면 Swagger `POST /collect`로,
+> **로컬 `.env`**에 넣으면 `scripts/collect_activities.py`로 수집한다. 방법은 **[COLLECT.md](COLLECT.md)**.
+> `POST /collect`는 `COLLECT_TOKEN`(팀만 아는 문자열)을 넣어야 실행된다.
+> 발표 자료에는 출처(명칭·기관·URL)를 반드시 적는다.
 
-엔드포인트 참고:
+- TourAPI는 공공데이터포털의 **Decoding** 키를 넣는다 (Encoding 키를 넣어도 수집기가 풀어서 쓴다). 개발계정 하루 1,000건.
+- KOPIS 키는 발급 후 1년 유효하고, 3개월 넘게 안 쓰면 승인이 취소된다. 연장·문의: kopis@gokams.or.kr
 
-- TourAPI: `https://apis.data.go.kr/B551011/KorService2`
-- KOPIS: `https://www.kopis.or.kr` 오픈 API (상세 URL 확인 필요)
+엔드포인트:
+
+- TourAPI: `https://apis.data.go.kr/B551011/KorService2/searchFestival2` (지역은 `lDongRegnCd`: 서울 11, 대전 30)
+- KOPIS: `https://kopis.or.kr/openApi/restful/` `pblprfr`(공연목록) · `pblprfr/{mt20id}`(상세) · `prfplc/{mt10id}`(시설) (지역 `signgucode`: 서울 11, 대전 30)
 - 문화정보: `https://apis.data.go.kr/B553457/cultureinfo`
 
 ---
@@ -77,6 +82,7 @@ CORS_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
 TOUR_API_KEY=...
 KOPIS_API_KEY=...
 CULTURE_API_KEY=...
+COLLECT_TOKEN=...
 USE_MEMORY=0
 ```
 
@@ -87,6 +93,9 @@ USE_MEMORY=0
 | `DATABASE_URL` | Supabase URI |
 | `CORS_ORIGINS` | Vercel URL (+ 로컬 테스트 URL) |
 | `USE_MEMORY` | `0` |
+| `KOPIS_API_KEY` | KOPIS 인증키 (Swagger에서 수집할 때) |
+| `TOUR_API_KEY` | TourAPI Decoding 키 (Swagger에서 수집할 때) |
+| `COLLECT_TOKEN` | 팀만 아는 문자열. `POST /collect`의 `x-collect-token`에 넣는다 |
 
 ### Vercel / 프론트
 
@@ -104,12 +113,12 @@ USE_MEMORY=0
 2. Render에 FastAPI 올리고 `DATABASE_URL` / `CORS_ORIGINS` 설정  
 3. Vercel에 `frontend` 올리고 `config.js`의 `API_BASE_URL`을 Render로 변경  
 4. 팀원 전원 QR 등록 → 모임 참여 → 라이브 보드에서 숫자가 변하는지 확인  
-5. (병렬) 공공 API 3종 호출 테스트 후 수집 스크립트에 키 연결  
+5. Render에 `KOPIS_API_KEY`·`TOUR_API_KEY`·`COLLECT_TOKEN` 넣고 Swagger `POST /collect` 실행 ([COLLECT.md](COLLECT.md))  
 
 ---
 
 ## 한 줄 요약
 
 - **서비스가 돌아가려면**: `DATABASE_URL` + Render URL + Vercel URL(+CORS)  
-- **행사 실데이터를 넣으려면**: `TOUR_API_KEY`, `KOPIS_API_KEY`, `CULTURE_API_KEY`  
+- **행사 실데이터를 넣으려면**: `TOUR_API_KEY`, `KOPIS_API_KEY` (+ Swagger 실행용 `COLLECT_TOKEN`)  
 - **프론트에 넣으면 안 되는 것**: 모든 API 키, Supabase `service_role`, DB 비밀번호  
