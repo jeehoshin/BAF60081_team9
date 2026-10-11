@@ -122,8 +122,11 @@ class _Fetcher:
                 await asyncio.sleep(delay)
             self.next_at = loop.time() + MIN_INTERVAL
 
-    async def get(self, path: str, params: dict | None = None) -> list[ET.Element]:
-        """실패하면(연결 오류·5xx·요청 차단) 잠깐 쉬고 다시 부른다."""
+    async def get(self, path: str, params: dict | None = None, parse=None) -> list:
+        """실패하면(연결 오류·5xx·요청 차단) 잠깐 쉬고 다시 부른다.
+
+        parse: 응답 본문을 읽는 함수. 기본은 공연 목록·상세용 parse_dbs, 통계는 kopis_stats.parse_prfsts.
+        """
         query = {"service": self.key, **(params or {})}
         problem = ""
         for attempt in range(MAX_TRIES):
@@ -144,7 +147,7 @@ class _Fetcher:
                 continue
             if res.status_code >= 400:
                 raise CollectError(f"KOPIS 요청 실패 (HTTP {res.status_code}). 인증키를 확인하세요.")
-            return parse_dbs(res.content)
+            return (parse or parse_dbs)(res.content)
         raise CollectError(problem)
 
 

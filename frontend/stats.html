@@ -6,6 +6,20 @@
   <title>데이터 분석 · 같이 갈래?</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <link rel="stylesheet" href="styles.css?v=campus4">
+  <style>
+    /* KOPIS 통계: 이름이 긴 장르·시도와 퍼센트 값이 들어가도록 칸을 넓힌다 */
+    .barlist.wide .barrow { grid-template-columns: 104px 1fr 64px; }
+    .barlist.wide .barrow span:last-child { text-align: right; }
+    .pairrow { display: grid; grid-template-columns: 104px 1fr 120px; gap: 8px; align-items: center; font-size: 0.85rem; }
+    .pairrow .tracks { display: grid; gap: 3px; }
+    .pairrow .tracks .bartrack { height: 6px; }
+    .pairrow .tracks .bartrack.alt i { opacity: 0.45; }
+    .pairrow span:last-child { text-align: right; color: var(--muted); }
+    .legend { display: flex; gap: 14px; font-size: 0.8rem; color: var(--muted); margin: 0 0 6px; }
+    .legend .bartrack { display: inline-block; width: 18px; height: 6px; vertical-align: middle; margin-right: 4px; }
+    .legend .bartrack i { width: 100%; }
+    .legend .bartrack.alt i { opacity: 0.45; }
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -38,6 +52,28 @@
       <h2>이용자 · 연령대</h2>
       <div class="barlist" id="byAge"></div>
     </section>
+
+    <section class="panel">
+      <h2>공연 시장 · KOPIS 통계 (전국)</h2>
+      <p class="hint" id="kopisPeriod">불러오는 중…</p>
+      <div class="grid stats" id="kopisKpi"></div>
+    </section>
+    <section class="panel">
+      <h2>시·도별 티켓 판매액 비중</h2>
+      <p class="hint">상위 10개 시·도와 대전. 비중은 전국 합계 대비입니다.</p>
+      <div class="barlist wide" id="kopisArea"></div>
+    </section>
+    <section class="panel">
+      <h2>장르별 · 상연 횟수와 판매액</h2>
+      <p class="hint">많이 열리는 장르와 돈이 되는 장르가 같은지 봅니다.</p>
+      <div class="legend"><span><span class="bartrack"><i></i></span>판매액 비중</span><span><span class="bartrack alt"><i></i></span>상연 횟수 비중</span></div>
+      <div class="barlist" id="kopisGenre"></div>
+    </section>
+    <section class="panel">
+      <h2>요일별 하루 평균 관객 수</h2>
+      <div class="barlist wide" id="kopisWeek"></div>
+      <p class="hint" id="kopisNotice" style="margin-top:14px"></p>
+    </section>
   </div>
 
   <script src="config.js"></script>
@@ -45,15 +81,61 @@
   <script>
     const { api, setStatus, escapeHtml } = window.Gachi;
 
-    function bars(el, items) {
+    function bars(el, items, fmt = (v) => v) {
       const max = Math.max(...items.map((i) => i.count), 1);
       el.innerHTML = items.map((i) => `
         <div class="barrow">
           <span>${escapeHtml(i.key)}</span>
           <div class="bartrack"><i style="width:${(i.count / max) * 100}%"></i></div>
-          <span>${i.count}</span>
+          <span>${fmt(i.count)}</span>
         </div>
       `).join("") || `<p class="hint">데이터 없음</p>`;
+    }
+
+    // KOPIS 통계 (지표 A·B·C). 한 번만 불러온다 (월 단위 집계라 자주 바뀌지 않음)
+    const pct = (v) => `${v}%`;
+    const num = (v) => Number(v).toLocaleString("ko-KR");
+
+    function pairBars(el, items) {
+      const max = Math.max(...items.flatMap((i) => [i.amount_share, i.performance_share]), 1);
+      el.innerHTML = items.map((i) => `
+        <div class="pairrow">
+          <span>${escapeHtml(i.key)}</span>
+          <div class="tracks">
+            <div class="bartrack"><i style="width:${(i.amount_share / max) * 100}%"></i></div>
+            <div class="bartrack alt"><i style="width:${(i.performance_share / max) * 100}%"></i></div>
+          </div>
+          <span>${i.amount_share}% / ${i.performance_share}%</span>
+        </div>
+      `).join("") || `<p class="hint">데이터 없음</p>`;
+    }
+
+    async function loadKopis() {
+      const period = document.getElementById("kopisPeriod");
+      try {
+        const k = await api("/stats/kopis");
+        if (!k.available) {
+          period.textContent = k.message;
+          return;
+        }
+        const h = k.highlights;
+        period.textContent = `${k.period.from} ~ ${k.period.to} · 공연예술통합전산망 연계 예매처 발권 기준`;
+        document.getElementById("kopisKpi").innerHTML = `
+          <div class="stat"><span>서울 판매액 비중</span><b>${h.seoul_amount_share ?? "-"}%</b></div>
+          <div class="stat"><span>대전 판매액 비중</span><b>${h.daejeon_amount_share ?? "-"}%</b></div>
+          <div class="stat"><span>서울 상연 횟수 비중</span><b>${h.seoul_performance_share ?? "-"}%</b></div>
+          <div class="stat"><span>주말(토·일) 관객 비중</span><b>${h.weekend_audience_share}%</b></div>
+        `;
+        const top = k.by_area.slice(0, 10);
+        const dj = k.by_area.find((a) => a.key === "대전");
+        if (dj && !top.includes(dj)) top.push(dj);
+        bars(document.getElementById("kopisArea"), top.map((a) => ({ key: a.key, count: a.amount_share })), pct);
+        pairBars(document.getElementById("kopisGenre"), k.by_genre);
+        bars(document.getElementById("kopisWeek"), k.by_weekday.map((d) => ({ key: d.key, count: d.avg_audience })), num);
+        document.getElementById("kopisNotice").textContent = `${k.notice} ${k.attribution}`;
+      } catch (e) {
+        period.textContent = `KOPIS 통계를 불러오지 못했어요: ${e.message}`;
+      }
     }
 
     async function load() {
@@ -79,6 +161,7 @@
       }
     }
     load();
+    loadKopis();
     setInterval(load, 15000);
   </script>
 </body>

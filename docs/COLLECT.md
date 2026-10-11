@@ -56,6 +56,19 @@ Render → 백엔드 서비스 → **Environment** → Add Environment Variable
 - TourAPI 분류: `EV01` 축제 → 축제, `EV02` 공연 → 공연, `EV03` 행사 → 제목에 '전시·특별전·展' 등이 있으면 전시, 아니면 축제
 - '중구'는 서울·대전에 다 있어서 지역 필터에서 같이 나온다
 
+## 3-1. KOPIS 공연 통계 (분석 페이지용)
+
+행사 목록과 별도로, KOPIS 통계 API에서 **전국** 시·도별·장르별·일별 공연 통계를 받아 `kopis_stats` 테이블에 넣는다. 분석 화면(`stats.html`)의 "공연 시장 · KOPIS 통계" 부분이 이 데이터를 쓴다.
+
+1. Swagger → **collect → POST /collect/kopis-stats → Try it out**
+2. `x-collect-token`에 `COLLECT_TOKEN` 값, 처음에는 `dry_run` **true**
+3. 결과의 `check.seoul_amount_share_percent`(서울 판매액 비중)가 그럴듯하면 `dry_run` **false**로 다시 실행
+4. 분석 화면 새로고침
+
+- 기간: 지난달부터 거꾸로 3개월 (이번 달은 집계 중이라 뺀다). KOPIS는 한 번에 31일까지라 달마다 부른다 (9번 호출, 10~20초)
+- 키는 `KOPIS_API_KEY` 그대로 쓴다
+- 로컬: `python scripts/collect_kopis_stats.py --dry-run`
+
 ## 4. 출처 표시 (필수)
 
 - KOPIS: 설명 끝에 `출처: (재)예술경영지원센터 공연예술통합전산망(www.kopis.or.kr)`이 자동으로 붙고, 상세 화면에 KOPIS 원본 링크가 나온다

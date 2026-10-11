@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -112,3 +112,33 @@ class Message(Base):
 
     meetup = relationship("Meetup", back_populates="messages")
     user = relationship("User", back_populates="messages")
+
+
+class KopisStat(Base):
+    """KOPIS 공연 통계 (전국 집계, 분석 전용). activities와 연결하지 않는다.
+
+    kind: area(시·도별) / genre(장르별) / day(일별). 한 달 단위로 받아 (kind, 기간, label)마다 한 행.
+    """
+
+    __tablename__ = "kopis_stats"
+    __table_args__ = (
+        UniqueConstraint("kind", "period_from", "period_to", "label", name="uq_kopis_stats_row"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)  # area / genre / day
+    period_from: Mapped[date] = mapped_column(Date, nullable=False)  # 집계 시작일 (그달 1일)
+    period_to: Mapped[date] = mapped_column(Date, nullable=False)  # 집계 끝날 (그달 말일)
+    label: Mapped[str] = mapped_column(String(64), nullable=False)  # 시·도 이름 / 장르 / 'YYYY-MM-DD'
+    level: Mapped[str | None] = mapped_column(String(16))  # area만: 시도 / 권역 / 합계
+    open_count: Mapped[int | None] = mapped_column(Integer)  # 개막 편수 (prfprocnt)
+    show_count: Mapped[int | None] = mapped_column(Integer)  # 공연 건수 (prfcnt, 장르별엔 없음)
+    performance_count: Mapped[int | None] = mapped_column(Integer)  # 상연 횟수 (prfdtcnt)
+    amount: Mapped[int | None] = mapped_column(BigInteger)  # 티켓 판매액(원)
+    tickets: Mapped[int | None] = mapped_column(Integer)  # 예매 수, 취소 포함
+    cancels: Mapped[int | None] = mapped_column(Integer)  # 취소 수
+    audience: Mapped[int | None] = mapped_column(Integer)  # 순 관객 수 (장르별은 KOPIS nmrs 원본)
+    seats: Mapped[int | None] = mapped_column(Integer)  # 좌석 수 (area만)
+    amount_share: Mapped[float | None] = mapped_column(Float)  # 판매액 비중 % (genre만, KOPIS 계산값)
+    audience_share: Mapped[float | None] = mapped_column(Float)  # 관객 비중 % (genre만, KOPIS 계산값)
+    collected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
