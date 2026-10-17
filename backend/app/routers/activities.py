@@ -1,9 +1,10 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import case, func
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session
 
+from app.collectors.common import AREAS, DAEJEON_LAT_MAX, SEOUL_LAT_MIN
 from app.database import get_db
 from app.models import Activity, Like, Meetup, Participant, now_kst
 from app.schemas import (
@@ -38,6 +39,10 @@ def _meetup_outs(db: Session, meetups: list[Meetup]) -> list[MeetupOut]:
 @router.get("", response_model=list[ActivityOut])
 def list_activities(
     region: str | None = None,
+    city: str | None = Query(
+        None,
+        description="서울 또는 대전. 그 도시의 구만 보여준다. '중구'처럼 두 도시에 다 있는 구는 좌표로 가른다",
+    ),
     activity_type: str | None = Query(None, alias="type"),
     date_from: datetime | None = None,
     date_to: datetime | None = None,
@@ -48,6 +53,13 @@ def list_activities(
     q = db.query(Activity)
     if region:
         q = q.filter(Activity.region == region)
+    if city:
+        if city not in AREAS:
+            raise HTTPException(status_code=422, detail=f"city는 {', '.join(AREAS)} 중 하나여야 해요.")
+        q = q.filter(Activity.region.in_(AREAS[city]["gu"]))
+        # 서울 북위 37.4~37.7, 대전 36.2~36.5. 좌표가 없는 행은 구 이름만 믿고 남긴다
+        lat_ok = Activity.lat >= SEOUL_LAT_MIN if city == "서울" else Activity.lat <= DAEJEON_LAT_MAX
+        q = q.filter(or_(Activity.lat.is_(None), lat_ok))
     if activity_type:
         q = q.filter(Activity.activity_type == activity_type)
     # 기간이 있는 공연·축제는 기간이 조회 범위와 하루라도 겹치면 보여준다

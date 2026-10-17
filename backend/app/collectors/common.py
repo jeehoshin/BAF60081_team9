@@ -42,6 +42,10 @@ AREAS: dict[str, dict] = {
 
 DEFAULT_AREAS = ("서울", "대전")
 
+# 두 도시에 다 있는 '중구'를 좌표로 가르는 기준. 서울은 북위 37.4~37.7, 대전은 36.2~36.5.
+SEOUL_LAT_MIN = 37.3
+DAEJEON_LAT_MAX = 37.0
+
 # activities 컬럼 길이 (models.py와 맞춘다). Postgres는 길이를 넘으면 저장이 실패한다.
 MAX_LEN = {
     "title": 255,

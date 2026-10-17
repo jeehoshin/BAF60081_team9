@@ -53,7 +53,7 @@ def main() -> int:
         db = SessionLocal()
 
     try:
-        result = kopis_stats.collect(db, key, months=args.months, dry_run=args.dry_run)
+        result = kopis_stats.collect(db, key, months=args.months, dry_run=args.dry_run, trigger="cli")
     except (CollectError, ValueError) as exc:
         print(f"[오류] {exc}")
         return 2

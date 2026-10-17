@@ -19,6 +19,22 @@ const UserStore = {
   },
 };
 
+// Render 무료 서버는 15분 쉬면 잠들어서 첫 요청이 30~60초 걸린다.
+// 응답이 4초 넘게 없으면 화면 아래에 안내를 띄우고, 응답이 오면 지운다.
+let wakeTimer = null;
+let wakeEl = null;
+function showWakeNotice() {
+  if (wakeEl) return;
+  wakeEl = document.createElement("div");
+  wakeEl.className = "wake-notice";
+  wakeEl.textContent = "서버를 깨우는 중이에요… 처음 접속은 최대 1분쯤 걸릴 수 있어요.";
+  document.body.appendChild(wakeEl);
+}
+function hideWakeNotice() {
+  if (wakeTimer) { clearTimeout(wakeTimer); wakeTimer = null; }
+  if (wakeEl) { wakeEl.remove(); wakeEl = null; }
+}
+
 async function api(path, options = {}) {
   const method = (options.method || "GET").toUpperCase();
   const headers = { ...(options.headers || {}) };
@@ -26,11 +42,17 @@ async function api(path, options = {}) {
   if (method !== "GET" && method !== "HEAD" && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
-  const res = await fetch(`${API()}${path}`, {
-    ...options,
-    method,
-    headers,
-  });
+  if (!wakeTimer && !wakeEl) wakeTimer = setTimeout(showWakeNotice, 4000);
+  let res;
+  try {
+    res = await fetch(`${API()}${path}`, {
+      ...options,
+      method,
+      headers,
+    });
+  } finally {
+    hideWakeNotice();
+  }
   const text = await res.text();
   let data = null;
   try {
@@ -139,6 +161,7 @@ const NAV_ITEMS = [
   ["live", "live.html", "라이브"],
   ["qr", "qr.html", "QR"],
   ["register", "register.html", "합류"],
+  ["pitch", "pitch.html", "발표자료"],
 ];
 
 function renderNav() {

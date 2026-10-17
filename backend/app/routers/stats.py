@@ -1,15 +1,17 @@
 import re
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.collectors.common import AREAS, DAEJEON_LAT_MAX, SEOUL_LAT_MIN
 from app.collectors.kopis_stats import ATTRIBUTION as KOPIS_ATTRIBUTION
 from app.collectors.kopis_stats import NOTICE as KOPIS_NOTICE
+from app.collectors.runs import run_to_dict
 from app import population as pop
 from app.database import get_db
-from app.models import Activity, KopisStat, Meetup, Participant, User
+from app.models import Activity, CollectRun, KopisStat, Meetup, Participant, User
 from app.schemas import StatsBucket
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -40,14 +42,36 @@ def activity_stats(db: Session = Depends(get_db)):
     }
 
 
+SINCE_HELP = (
+    "이 시각(한국 시간, 예: 2026-10-21T13:00:00) 이후에 생긴 것만 센다. "
+    "발표 때 '오늘 QR로 들어온 청중만' 보기용. 비우면 전체."
+)
+
+
 @router.get("/meetups")
-def meetup_stats(db: Session = Depends(get_db)):
-    meetup_count = db.query(Meetup).count()
-    participant_count = db.query(Participant).count()
-    capacities = db.query(Meetup.capacity).all()
-    total_capacity = sum(c[0] for c in capacities) or 0
-    fill_rate = round(participant_count / total_capacity * 100, 1) if total_capacity else 0.0
+def meetup_stats(
+    since: datetime | None = Query(None, description=SINCE_HELP),
+    db: Session = Depends(get_db),
+):
+    """모임 수·참여 인원·충원율. since를 주면 그 이후 만든 모임과 그 이후 참여만 센다."""
+    meetup_q = db.query(Meetup)
+    participant_q = db.query(Participant)
+    if since:
+        meetup_q = meetup_q.filter(Meetup.created_at >= since)
+        participant_q = participant_q.filter(Participant.joined_at >= since)
+    meetup_count = meetup_q.count()
+    participant_count = participant_q.count()
+    capacities = [c[0] for c in meetup_q.with_entities(Meetup.capacity).all()]
+    total_capacity = sum(capacities) or 0
+    # 충원율은 '그 기간에 만든 모임'의 정원 대비 '그 모임들에 들어온 사람' 비율
+    if since and meetup_count:
+        ids = [m.meetup_id for m in meetup_q.with_entities(Meetup.meetup_id).all()]
+        filled = db.query(Participant).filter(Participant.meetup_id.in_(ids)).count()
+    else:
+        filled = participant_count
+    fill_rate = round(filled / total_capacity * 100, 1) if total_capacity else 0.0
     return {
+        "since": since.isoformat(timespec="seconds") if since else None,
         "open_meetups": meetup_count,
         "participants": participant_count,
         "avg_fill_rate_percent": fill_rate,
@@ -55,13 +79,125 @@ def meetup_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/users")
-def user_stats(db: Session = Depends(get_db)):
-    by_age = db.query(User.age_group, func.count(User.user_id)).group_by(User.age_group).all()
-    by_gender = db.query(User.gender, func.count(User.user_id)).group_by(User.gender).all()
+def user_stats(
+    since: datetime | None = Query(None, description=SINCE_HELP),
+    db: Session = Depends(get_db),
+):
+    """이용자 연령대·성별 분포. since를 주면 그 이후 등록한 이용자만 센다."""
+    q = db.query(User)
+    if since:
+        q = q.filter(User.created_at >= since)
+    by_age = q.with_entities(User.age_group, func.count(User.user_id)).group_by(User.age_group).all()
+    by_gender = q.with_entities(User.gender, func.count(User.user_id)).group_by(User.gender).all()
     return {
-        "total": db.query(User).count(),
+        "since": since.isoformat(timespec="seconds") if since else None,
+        "total": q.count(),
         "by_age_group": [StatsBucket(key=k or "미상", count=c) for k, c in by_age],
         "by_gender": [StatsBucket(key=k or "미상", count=c) for k, c in by_gender],
+    }
+
+
+# ---------------------------------------------------------------------------
+# 지표 G: 구별 인구 10만 명당 활동 수 (서울 vs 대전)
+# ---------------------------------------------------------------------------
+
+def city_of(activity: Activity) -> str | None:
+    """활동이 서울인지 대전인지. 구 이름으로 정하고, 두 도시에 다 있는 '중구'는 좌표·장소 글자로 가른다."""
+    gu = (activity.region or "").strip()
+    if not gu:
+        return None
+    in_seoul = gu in AREAS["서울"]["gu"]
+    in_daejeon = gu in AREAS["대전"]["gu"]
+    if in_seoul and not in_daejeon:
+        return "서울"
+    if in_daejeon and not in_seoul:
+        return "대전"
+    if not in_seoul and not in_daejeon:
+        return None
+    if activity.lat is not None:
+        if activity.lat >= SEOUL_LAT_MIN:
+            return "서울"
+        if activity.lat <= DAEJEON_LAT_MAX:
+            return "대전"
+    text = f"{activity.place or ''} {activity.description or ''}"
+    if "대전" in text:
+        return "대전"
+    if "서울" in text:
+        return "서울"
+    return None
+
+
+@router.get("/regions")
+def region_stats(
+    include_ended: bool = Query(True, description="false면 오늘 기준 끝난 행사는 빼고 센다"),
+    db: Session = Depends(get_db),
+):
+    """지표 G. 구별 활동 수를 주민등록 인구로 나눠 '인구 10만 명당 활동 수'로 서울·대전을 비교한다.
+
+    "서울에 많은 건 사람이 많아서"라는 반론에 답하는 지표. 활동 수는 수집된 공연·축제·전시와
+    사용자 러닝을 모두 센다. 구를 모르는 활동(region 없음)은 뺀다.
+    """
+    rows = db.query(Activity).all()
+    from app.models import now_kst
+    now = now_kst()
+    if not include_ended:
+        rows = [a for a in rows if _status(a, now) != "ended"]
+
+    counts: dict[str, dict[str, int]] = {"서울": {}, "대전": {}}
+    unknown = 0
+    for a in rows:
+        city = city_of(a)
+        if not city:
+            unknown += 1
+            continue
+        counts[city][a.region] = counts[city].get(a.region, 0) + 1
+
+    cities = []
+    for city in ("서울", "대전"):
+        people = pop.population_of(city)
+        total = sum(counts[city].values())
+        districts = []
+        for gu, gu_pop in pop.DISTRICTS[city].items():
+            n = counts[city].get(gu, 0)
+            districts.append({"key": gu, "count": n, "population": gu_pop, "per_100k": pop.per_100k(n, gu_pop)})
+        districts.sort(key=lambda d: (d["per_100k"] or 0, d["count"]), reverse=True)
+        with_any = [d for d in districts if d["count"]]
+        cities.append({
+            "city": city,
+            "population": people,
+            "activities": total,
+            "per_100k": pop.per_100k(total, people),
+            "districts": districts,
+            "districts_with_activity": len(with_any),
+            "district_total": len(districts),
+            "top_district": with_any[0]["key"] if with_any else None,
+            # 상위 3개 구에 몇 %가 몰려 있나 (집중도)
+            "top3_share": _pct(sum(d["count"] for d in with_any[:3]), total),
+        })
+    seoul, daejeon = cities
+    ratio = (
+        round(seoul["per_100k"] / daejeon["per_100k"], 2)
+        if seoul["per_100k"] and daejeon["per_100k"] else None
+    )
+    return {
+        "as_of": now.isoformat(timespec="minutes"),
+        "include_ended": include_ended,
+        "counted": len(rows) - unknown,
+        "unknown_region": unknown,
+        "cities": cities,
+        "highlights": {
+            "seoul_per_100k": seoul["per_100k"],
+            "daejeon_per_100k": daejeon["per_100k"],
+            "seoul_vs_daejeon_ratio": ratio,
+            "seoul_total": seoul["activities"],
+            "daejeon_total": daejeon["activities"],
+        },
+        "population_basis": {
+            "source": pop.SOURCE,
+            "url": pop.SOURCE_URL,
+            "month": pop.BASIS_MONTH,
+            "note": "구별 활동 수를 그 구의 주민등록 인구로 나눈 값 (외국인 제외). '중구'는 좌표로 서울·대전을 가른다",
+        },
     }
 
 
@@ -253,6 +389,34 @@ def _status(a: Activity, now: datetime) -> str:
     return "ongoing"
 
 
+def collect_run_summary(db: Session, recent: int = 10) -> dict:
+    """수집 기록 요약: 종류별 마지막 '실제 저장' 실행과 최근 실행 목록.
+
+    마지막 실행의 출처·지역별 결과(받은 수·남긴 수·뺀 이유별 수·오류)가 데이터 품질 표의 근거가 된다.
+    """
+    runs = db.query(CollectRun).order_by(CollectRun.started_at.desc(), CollectRun.id.desc()).limit(200).all()
+    last: dict[str, dict] = {}
+    for r in runs:
+        if r.dry_run or r.kind in last:
+            continue
+        last[r.kind] = run_to_dict(r)
+    return {
+        "total": db.query(CollectRun).count(),
+        "last_activities": last.get("activities"),
+        "last_kopis_stats": last.get("kopis_stats"),
+        "recent": [run_to_dict(r) for r in runs[:recent]],
+    }
+
+
+@router.get("/collect-runs")
+def collect_runs(
+    limit: int = Query(20, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """수집 실행 기록 (기획 3-6). 최근 것부터. 출처·지역별 받은 수·뺀 이유·오류가 들어 있다."""
+    return collect_run_summary(db, recent=limit)
+
+
 @router.get("/quality")
 def data_quality(db: Session = Depends(get_db)):
     """데이터 품질 지표 (분석 페이지·발표용).
@@ -300,6 +464,7 @@ def data_quality(db: Session = Depends(get_db)):
         "as_of": now.isoformat(timespec="minutes"),
         "total": summarize(rows),
         "by_source": sources,
+        "collect_runs": collect_run_summary(db),
         "cross_source_duplicates": {
             "count": len(duplicates),
             "public_total": public_count,

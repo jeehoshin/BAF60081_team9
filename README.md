@@ -59,17 +59,18 @@ docs/        키 체크리스트 · 수집 · 배포 · API · DB
 
 | 지표 | API | 설명 |
 |------|-----|------|
-| 수집 활동·모임·이용자 현황 | `GET /stats/activities`, `/stats/meetups`, `/stats/users` | 지역·유형별 활동 수, 모임 충원율, 연령대 분포 |
+| 수집 활동·모임·이용자 현황 | `GET /stats/activities`, `/stats/meetups`, `/stats/users` | 지역·유형별 활동 수, 모임 충원율, 연령대·성별 분포. **"오늘 QR 참여자만"** 버튼(`since`)으로 발표 당일 청중 데이터만 따로 봄 |
+| 구별 인구 10만 명당 활동 수 | `GET /stats/regions` | 서울 25개 구·대전 5개 구의 활동 수를 구 주민등록 인구로 나눠 서울 vs 대전 비교 (지표 G) |
 | 공연 시장 (KOPIS 통계) | `GET /stats/kopis` | 시·도별 판매액 비중, 장르별 상연 횟수·판매액, 요일별 관객 |
 | 인구 10만 명당 서울 vs 대전 | `GET /stats/kopis` | 판매액·상연 횟수·관객 수를 시·도 주민등록 인구(행정안전부, 2026년 9월 말)로 나눔 |
-| 데이터 품질 | `GET /stats/quality` | 출처별 수집 건수, 이미지·좌표 빈 비율, 진행 중·예정·종료 비율, 출처 간 중복 후보 |
+| 데이터 품질 | `GET /stats/quality` | 출처별 수집 건수, 이미지·좌표 빈 비율, 진행 중·예정·종료 비율, 출처 간 중복 후보, **최근 수집 기록**(`collect_runs`: 언제, 몇 건 받아 몇 건 저장·제외) |
 
 ## 시연 화면
 
 | 페이지 | 역할 |
 |--------|------|
 | `register.html` / `qr.html` | QR 이용자 등록 |
-| `index.html` | 활동 탐색 |
+| `index.html` | 활동 탐색 (지역은 대전 전체/서울 전체/구 단위, 날짜 빠른 필터) |
 | `map.html` | 지도 + 타임라인 (누가/언제/어디서/어떻게), 지도에서 모임 개설 |
 | `talk.html` | 모임톡 (버블 채팅) |
 | `activity.html` | 활동 상세 + 모임 참여 |
@@ -100,6 +101,16 @@ npx --yes serve -l 5500
 
 - API/Swagger: http://127.0.0.1:8000/docs  
 - 프론트: http://127.0.0.1:5500  
+
+## 테스트
+
+```bash
+cd backend
+python -m unittest discover tests -v   # 인증키·인터넷 없이 돌아간다
+```
+
+PR을 올리면 GitHub Actions(`backend-tests`)가 같은 테스트를 자동으로 돌려 PR 화면에 초록/빨강으로 표시한다.
+`keep-warm` 워크플로는 한국 시간 08~22시에 10분마다 Render `/health`를 불러 서버가 잠들지 않게 한다.
 
 ## 배포
 

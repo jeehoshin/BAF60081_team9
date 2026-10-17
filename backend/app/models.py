@@ -1,6 +1,8 @@
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import BigInteger, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    BigInteger, Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -149,3 +151,29 @@ class KopisStat(Base):
     amount_share: Mapped[float | None] = mapped_column(Float)  # 판매액 비중 % (genre만, KOPIS 계산값)
     audience_share: Mapped[float | None] = mapped_column(Float)  # 관객 비중 % (genre만, KOPIS 계산값)
     collected_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
+
+
+class CollectRun(Base):
+    """수집 실행 기록 (기획 3-6). POST /collect·/collect/kopis-stats·로컬 스크립트가 돌 때마다 한 행.
+
+    데이터 품질 지표(분석 페이지)의 "마지막 수집이 언제였고, 출처별로 몇 건 받아 몇 건 저장·제외했나"의 근거.
+    """
+
+    __tablename__ = "collect_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)  # activities / kopis_stats
+    trigger: Mapped[str] = mapped_column(String(16), default="api")  # api(Swagger) / cli(scripts/)
+    dry_run: Mapped[bool] = mapped_column(Boolean, default=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now_kst)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime)
+    window_from: Mapped[date | None] = mapped_column(Date)  # 수집 대상 기간 (행사: 오늘~N일 / 통계: 달)
+    window_to: Mapped[date | None] = mapped_column(Date)
+    collected: Mapped[int] = mapped_column(Integer, default=0)  # API에서 받아 저장 대상으로 남은 건수
+    inserted: Mapped[int] = mapped_column(Integer, default=0)
+    updated: Mapped[int] = mapped_column(Integer, default=0)
+    unchanged: Mapped[int] = mapped_column(Integer, default=0)
+    skipped: Mapped[int] = mapped_column(Integer, default=0)  # 기간 밖·장기 행사·구 불명 등으로 뺀 건수 합
+    error_count: Mapped[int] = mapped_column(Integer, default=0)  # 출처·지역 단위 오류 수
+    ok: Mapped[bool] = mapped_column(Boolean, default=True)  # 오류가 하나도 없었는지
+    details: Mapped[str | None] = mapped_column(Text)  # 옵션 + 출처·지역별 결과(JSON 문자열)

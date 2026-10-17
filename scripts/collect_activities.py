@@ -73,6 +73,7 @@ def main() -> int:
             tour_key=settings.tour_api_key or os.getenv("TOUR_API_KEY", ""),
             culture_key=settings.culture_api_key or os.getenv("CULTURE_API_KEY", ""),
             dry_run=args.dry_run,
+            trigger="cli",
         )
     finally:
         if db is not None:

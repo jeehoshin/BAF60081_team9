@@ -613,6 +613,14 @@ button.active-chat { outline: 2px solid var(--kaist); }
 }
 .chip-btn.on { background: var(--kaist-deep); color: #fff; border-color: var(--kaist-deep); }
 
+/* Render 서버가 잠들어 첫 응답이 늦을 때 app.js가 띄우는 안내 */
+.wake-notice {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 1000;
+  padding: 10px 16px; border-radius: 999px; font-size: 0.88rem; font-weight: 600;
+  background: var(--kaist-deep); color: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  max-width: calc(100vw - 32px); text-align: center;
+}
+
 .map-layout {
   display: grid; grid-template-columns: 400px 1fr; gap: 14px;
   height: calc(100vh - 230px); min-height: 520px;

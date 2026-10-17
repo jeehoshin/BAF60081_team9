@@ -1,0 +1,29 @@
+# 백엔드 테스트 자동 실행.
+# PR을 올리거나 main에 push하면 GitHub가 알아서 돌린다. 인증키·인터넷 없이 도는 테스트만 있다.
+# 결과는 PR 화면 아래 "Checks"에 초록(통과)/빨강(실패)으로 보인다.
+name: backend-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover tests -v
+        env:
+          USE_MEMORY: "1"
+          TZ: Asia/Seoul
