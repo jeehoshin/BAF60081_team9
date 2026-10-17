@@ -5,7 +5,7 @@ from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Activity, Like, Meetup, Participant
+from app.models import Activity, Like, Meetup, Participant, now_kst
 from app.schemas import (
     ActivityCreate,
     ActivityDetailOut,
@@ -57,7 +57,7 @@ def list_activities(
     if date_to:
         q = q.filter(Activity.starts_at <= date_to)
     # 정렬: 지금 볼 수 있거나 곧 시작하는 것 먼저, 이미 끝난 것은 맨 뒤
-    now = datetime.now()
+    now = now_kst()
     is_over = case((last_day < now, 1), else_=0)
     next_time = case((Activity.starts_at < now, now), else_=Activity.starts_at)
     return q.order_by(

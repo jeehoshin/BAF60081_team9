@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Activity, Meetup, Message, Participant, User
+from app.models import KST, Activity, Meetup, Message, Participant, User, now_kst
 from app.schemas import (
     MeetupCreate,
     MeetupOut,
@@ -47,8 +47,8 @@ def _check_not_past(meet_at: datetime | None) -> None:
     if meet_at is None:
         return
     if meet_at.tzinfo is not None:
-        meet_at = meet_at.astimezone().replace(tzinfo=None)
-    if meet_at < datetime.now() - timedelta(minutes=5):
+        meet_at = meet_at.astimezone(KST).replace(tzinfo=None)
+    if meet_at < now_kst() - timedelta(minutes=5):
         raise HTTPException(status_code=400, detail="모임 시각이 이미 지났어요. 앞으로의 시각을 골라 주세요.")
 
 

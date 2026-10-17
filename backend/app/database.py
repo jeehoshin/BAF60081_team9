@@ -89,6 +89,27 @@ def ensure_schema(bind=None) -> list[str]:
                     "ON activities (external_id)"
                 )
             )
+        # Render(UTC)에서 저장된 기존 created_at/joined_at 시각을 KST(+9시간)로 1회 보정
+        if bind.dialect.name == "postgresql":
+            conn.execute(text("CREATE TABLE IF NOT EXISTS _schema_migrations (name VARCHAR(64) PRIMARY KEY)"))
+            done = conn.execute(
+                text("SELECT 1 FROM _schema_migrations WHERE name = 'kst_timestamps_v1'")
+            ).first()
+            if not done:
+                for tbl, col in (
+                    ("messages", "created_at"),
+                    ("participants", "joined_at"),
+                    ("users", "created_at"),
+                    ("meetups", "created_at"),
+                ):
+                    if tbl in tables:
+                        conn.execute(
+                            text(
+                                f"UPDATE {tbl} SET {col} = {col} + INTERVAL '9 hours' "
+                                f"WHERE {col} <= (NOW() AT TIME ZONE 'UTC') + INTERVAL '5 minutes'"
+                            )
+                        )
+                conn.execute(text("INSERT INTO _schema_migrations (name) VALUES ('kst_timestamps_v1')"))
     if added:
         print(f"[db] 칸 추가: {', '.join(added)}")
     return added

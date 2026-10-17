@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models import Activity, Meetup, Message, Participant, User
+from app.models import Activity, Meetup, Message, Participant, User, now_kst
 
 # KAIST 대전 본원 주변 좌표
 KAIST_GATE = (36.3664, 127.3636)
@@ -29,7 +29,7 @@ def seed_demo_data(db: Session) -> None:
     db.add_all(users)
     db.flush()
 
-    now = datetime.now().replace(minute=0, second=0, microsecond=0)
+    now = now_kst().replace(minute=0, second=0, microsecond=0)
 
     def at(days: int, hour: int, minute: int = 0) -> datetime:
         return (now + timedelta(days=days)).replace(hour=hour, minute=minute)

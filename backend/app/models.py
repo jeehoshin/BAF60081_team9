@@ -1,9 +1,16 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import BigInteger, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+KST = timezone(timedelta(hours=9))
+
+
+def now_kst() -> datetime:
+    """한국 표준시 현재 시각(timezone-naive). Render 서버 기본 시간대가 UTC라 KST로 맞춘다."""
+    return datetime.now(KST).replace(tzinfo=None)
 
 
 class User(Base):
@@ -15,7 +22,7 @@ class User(Base):
     age_group: Mapped[str | None] = mapped_column(String(32))
     preferred_types: Mapped[str | None] = mapped_column(String(128))
     preferred_regions: Mapped[str | None] = mapped_column(String(128))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
 
     hosted_meetups = relationship("Meetup", back_populates="host")
     participations = relationship("Participant", back_populates="user")
@@ -43,7 +50,7 @@ class Activity(Base):
     image_url: Mapped[str | None] = mapped_column(String(512))  # 포스터·대표 이미지
     lat: Mapped[float | None] = mapped_column(Float)
     lng: Mapped[float | None] = mapped_column(Float)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
 
     meetups = relationship("Meetup", back_populates="activity")
     likes = relationship("Like", back_populates="activity")
@@ -64,7 +71,7 @@ class Meetup(Base):
     how: Mapped[str | None] = mapped_column(Text)  # 진행 방식 (예: 정문 집결 → 도보 이동)
     gender_filter: Mapped[str | None] = mapped_column(String(16))
     age_filter: Mapped[str | None] = mapped_column(String(32))
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
 
     activity = relationship("Activity", back_populates="meetups")
     host = relationship("User", back_populates="hosted_meetups")
@@ -79,7 +86,7 @@ class Participant(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     meetup_id: Mapped[int] = mapped_column(ForeignKey("meetups.meetup_id"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
-    joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    joined_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
     vote: Mapped[str | None] = mapped_column(String(16))  # approve / reject (optional)
 
     meetup = relationship("Meetup", back_populates="participants")
@@ -93,7 +100,7 @@ class Like(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
     activity_id: Mapped[int] = mapped_column(ForeignKey("activities.activity_id"), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
 
     user = relationship("User", back_populates="likes")
     activity = relationship("Activity", back_populates="likes")
@@ -108,7 +115,7 @@ class Message(Base):
     meetup_id: Mapped[int] = mapped_column(ForeignKey("meetups.meetup_id"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), nullable=False)
     body: Mapped[str] = mapped_column(String(280), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
 
     meetup = relationship("Meetup", back_populates="messages")
     user = relationship("User", back_populates="messages")
@@ -141,4 +148,4 @@ class KopisStat(Base):
     seats: Mapped[int | None] = mapped_column(Integer)  # 좌석 수 (area만)
     amount_share: Mapped[float | None] = mapped_column(Float)  # 판매액 비중 % (genre만, KOPIS 계산값)
     audience_share: Mapped[float | None] = mapped_column(Float)  # 관객 비중 % (genre만, KOPIS 계산값)
-    collected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    collected_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)

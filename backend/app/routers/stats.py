@@ -262,7 +262,8 @@ def data_quality(db: Session = Depends(get_db)):
     - 서로 다른 공공 API 출처 간 중복 후보 건수와 목록
     """
     rows = db.query(Activity).all()
-    now = datetime.now()
+    from app.models import now_kst
+    now = now_kst()
 
     def summarize(items: list[Activity]) -> dict:
         n = len(items)

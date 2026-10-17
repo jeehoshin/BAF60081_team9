@@ -176,8 +176,14 @@ function typeStyle(type) {
 
 function fmtTime(iso) {
   if (!iso) return "";
-  const d = new Date(iso);
+  let d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
+  if (typeof iso === "string" && !/[Z+-]\d*:?\d*$/.test(iso)) {
+    const diffHours = (Date.now() - d.getTime()) / 3600000;
+    if (diffHours >= 8.5 && diffHours <= 9.2) {
+      d = new Date(d.getTime() + 9 * 3600000);
+    }
+  }
   return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 }
 

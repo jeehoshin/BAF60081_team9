@@ -219,7 +219,8 @@ def save(db: Session, rows: list[dict], reports: list[StatsReport]) -> int:
         db.query(KopisStat).filter(
             KopisStat.kind == kind, KopisStat.period_from == start, KopisStat.period_to == end
         ).delete(synchronize_session=False)
-    now = datetime.now()
+    from app.models import now_kst
+    now = now_kst()
     for row in rows:
         db.add(KopisStat(**row, collected_at=now))
     db.commit()
