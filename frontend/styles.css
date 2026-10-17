@@ -414,6 +414,16 @@ button:disabled {
   font-size: 0.82rem;
   font-weight: 700;
 }
+.reason-note a { color: var(--kaist-deep); text-decoration: underline; margin-left: 4px; }
+/* 지도·타임라인 카드도 조건이 안 맞으면 같은 회색 처리 */
+.m-card.disabled-card {
+  --c: #b7c3d9;
+  background: #f5f7fb;
+  color: var(--muted);
+  opacity: 0.78;
+}
+.m-card.disabled-card h3 { color: var(--muted); }
+.m-card.disabled-card .type-tag { background: #e6ebf4; color: #6c7a94; }
 .notice-box {
   margin: 4px 0;
   padding: 10px 12px;
@@ -770,6 +780,7 @@ dl.w4 dd { margin: 0; color: var(--ink); }
   border-top: 1px solid var(--line); padding: 14px 16px; display: flex; justify-content: space-between;
   align-items: center; gap: 10px; background: #fffaf0; font-weight: 700;
 }
+.join-bar.locked { background: #eef2f9; color: #4a5873; }
 
 @media (max-width: 960px) {
   .map-layout { grid-template-columns: 1fr; height: auto; }

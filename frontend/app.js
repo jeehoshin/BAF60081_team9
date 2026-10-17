@@ -73,9 +73,12 @@ function renderUserBox(selector = "#userBox") {
     el.innerHTML = `아직 합류하지 않았어요. <a href="register.html">닉네임으로 합류</a> · <a href="qr.html">QR</a>`;
     return;
   }
+  // 참여자 목록과 같은 "30대(여)" 형식으로 내 정보를 보여준다
+  const me = fmtPerson(user).replace(`${user.nickname} · `, "");
   el.innerHTML = `
     <span>접속 중: <strong>${escapeHtml(user.nickname)}</strong>
-    (id ${user.user_id}${user.age_group ? `, ${escapeHtml(user.age_group)}` : ""})</span>
+    <span class="muted">(id ${user.user_id} · ${escapeHtml(me)})</span></span>
+    <a href="register.html" class="muted">내 정보 수정</a>
     <button type="button" class="secondary" id="logoutBtn">로그아웃</button>
   `;
   el.querySelector("#logoutBtn")?.addEventListener("click", () => {
@@ -188,6 +191,73 @@ function fmtPerson(p) {
   return `${name} · 정보 비공개`;
 }
 
+// "선택 안 함"·"무관"·빈 값은 입력 안 한 것으로 본다
+function cleanChoice(v) {
+  return v && v !== "선택 안 함" && v !== "무관" ? v : "";
+}
+
+function genderLabel(g) {
+  return g === "여" ? "여성" : g === "남" ? "남성" : g;
+}
+
+// 모임 참여 가능 여부. 서버(POST /meetups/{id}/participants)와 같은 규칙으로 미리 판정해
+// 화면에서 회색 카드·사유를 보여준다. m은 /activities의 모임(MeetupOut)과 /map의 카드 둘 다 받는다.
+function meetupState(m, user, joined = false) {
+  const count = m.participant_count ?? m.who?.count ?? 0;
+  const capacity = m.capacity ?? m.who?.capacity ?? 0;
+  if (joined) return { state: "joined", disabled: false, reason: "" };
+  if (capacity && count >= capacity) return { state: "full", disabled: true, reason: "정원이 마감되었어요" };
+  const g = cleanChoice(m.gender_filter);
+  const a = cleanChoice(m.age_filter);
+  if (!g && !a) return { state: "ok", disabled: false, reason: "" };
+  if (!user) {
+    return { state: "need_login", disabled: false, reason: "참여 조건이 있는 모임이에요. 합류할 때 연령대·성별을 입력하면 참여할 수 있어요" };
+  }
+  const userGender = cleanChoice(user.gender);
+  const userAge = cleanChoice(user.age_group);
+  if ((g && !userGender) || (a && !userAge)) {
+    return { state: "missing_info", disabled: true, reason: "참여 조건이 있는 모임이에요. 연령대·성별을 입력해 주세요" };
+  }
+  if (g && userGender !== g) {
+    return { state: "gender_mismatch", disabled: true, reason: `이 모임은 ${genderLabel(g)}만 참여할 수 있어요` };
+  }
+  if (a && userAge !== a) {
+    return { state: "age_mismatch", disabled: true, reason: `이 모임은 ${a}만 참여할 수 있어요` };
+  }
+  return { state: "ok", disabled: false, reason: "" };
+}
+
+// 모임을 열 때 호스트도 자기 조건을 충족해야 한다(서버도 같은 규칙으로 거절). 문제 없으면 "".
+function hostFilterProblem(user, genderFilter, ageFilter) {
+  const g = cleanChoice(genderFilter);
+  const a = cleanChoice(ageFilter);
+  if (g && cleanChoice(user?.gender) !== g) {
+    return `호스트도 조건을 충족해야 해요. '${genderLabel(g)}만' 모임을 열려면 내 성별이 '${g}'로 등록되어 있어야 합니다.`;
+  }
+  if (a && cleanChoice(user?.age_group) !== a) {
+    return `호스트도 조건을 충족해야 해요. '${a}만' 모임을 열려면 내 연령대가 '${a}'로 등록되어 있어야 합니다.`;
+  }
+  return "";
+}
+
+// 모임 조건 배지 HTML. 조건이 없으면 "조건 무관"(showNone=true일 때)
+function condBadges(m, showNone = false) {
+  const g = cleanChoice(m.gender_filter);
+  const a = cleanChoice(m.age_filter);
+  const out = [];
+  if (g) out.push(`<span class="pill warn">${escapeHtml(genderLabel(g))}만</span>`);
+  if (a) out.push(`<span class="pill warn">${escapeHtml(a)}만</span>`);
+  if (!out.length && showNone) out.push(`<span class="pill">조건 무관</span>`);
+  return out.join("");
+}
+
+// 참여 불가 사유 HTML. 정보 미입력이면 바로 고칠 수 있는 링크를 붙인다.
+function reasonNote(ev) {
+  if (!ev?.reason) return "";
+  const fix = ev.state === "missing_info" ? ` <a href="register.html">내 정보 입력하기</a>` : "";
+  return `<p class="reason-note">🔒 ${escapeHtml(ev.reason)}${fix}</p>`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderNav();
   applyMascot();
@@ -196,5 +266,6 @@ document.addEventListener("DOMContentLoaded", () => {
 window.Gachi = {
   api, API, UserStore, setStatus, requireUser, renderUserBox, escapeHtml, fmtDate, fmtTime,
   fmtPeriod, fmtPerson, safeUrl, typeStyle, renderNav, applyMascot,
+  cleanChoice, genderLabel, meetupState, hostFilterProblem, condBadges, reasonNote,
 };
 })();

@@ -43,13 +43,18 @@
       return null;
     }
 
-    function isClosingSoon(endsAt) {
-      if (!endsAt) return false;
-      const e = new Date(endsAt);
-      if (Number.isNaN(e.getTime())) return false;
-      const now = new Date();
-      const diffDays = (e.getTime() - now.getTime()) / (1000 * 3600 * 24);
-      return diffDays >= 0 && diffDays <= 14;
+    // 마지막 날(ends_at, 없으면 starts_at — 러닝처럼 하루짜리) 기준으로 "종료" / "마감 임박(2주 이내)" 판정
+    function dateBadge(a) {
+      const last = a.ends_at || a.starts_at;
+      if (!last) return "";
+      const e = new Date(last);
+      if (Number.isNaN(e.getTime())) return "";
+      // 날짜만 있는 공공 API 행사(00:00)는 그날 하루가 끝날 때까지 진행 중으로 본다
+      if (e.getHours() === 0 && e.getMinutes() === 0) e.setHours(23, 59, 59, 999);
+      const diffDays = (e.getTime() - Date.now()) / (1000 * 3600 * 24);
+      if (diffDays < 0) return `<span class="pill">종료</span>`;
+      if (diffDays <= 14) return `<span class="pill danger">마감 임박</span>`;
+      return "";
     }
 
     function fmtSource(src) {
@@ -76,12 +81,14 @@
         list.innerHTML =
           rows
             .map(
-              (a) => `
-          <article class="card">
+              (a) => {
+                const badge = dateBadge(a);
+                return `
+          <article class="card ${badge.includes("종료") ? "disabled-card" : ""}">
             <div style="display:flex;flex-wrap:wrap;gap:6px">
               <span class="pill">${escapeHtml(a.activity_type)}</span>
               <span class="pill warn">${escapeHtml(fmtSource(a.source))}</span>
-              ${isClosingSoon(a.ends_at) ? `<span class="pill danger">마감 임박</span>` : ""}
+              ${badge}
             </div>
             <h3>${escapeHtml(a.title)}</h3>
             <div class="meta">
@@ -94,7 +101,8 @@
             <div class="actions">
               <a href="activity.html?id=${a.activity_id}"><button type="button">상세·모임</button></a>
             </div>
-          </article>`
+          </article>`;
+              }
             )
             .join("") || `<p class="hint">조건에 맞는 활동이 없습니다.</p>`;
       } catch (e) {
