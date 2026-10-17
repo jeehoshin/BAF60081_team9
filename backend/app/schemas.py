@@ -11,6 +11,16 @@ class UserCreate(BaseModel):
     preferred_regions: str | None = None
 
 
+class UserUpdate(BaseModel):
+    """내 정보 수정. 보낸 칸만 바뀐다 (빈 문자열은 '지움'으로 처리)."""
+
+    nickname: str | None = Field(default=None, min_length=1, max_length=64)
+    gender: str | None = None
+    age_group: str | None = None
+    preferred_types: str | None = None
+    preferred_regions: str | None = None
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

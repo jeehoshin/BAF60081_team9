@@ -135,6 +135,45 @@ class MeetupAndLiveTests(unittest.TestCase):
         self.assertTrue(any(j.get("meetup_id") == m_id and j.get("activity_id") == act["activity_id"] for j in live["recent_joins"]))
         self.assertTrue(any(om.get("meetup_id") == m_id and om.get("activity_id") == act["activity_id"] for om in live["open_meetups"]))
 
+        # 정보 미입력 이용자가 내 정보를 채우면(같은 user_id 유지) 조건 모임에 참여할 수 있다
+        r_fill = self.client.patch(
+            f"/users/{u_no_info['user_id']}",
+            json={"gender": "여", "age_group": "30대"},
+        )
+        self.assertEqual(r_fill.status_code, 200, r_fill.text)
+        self.assertEqual(r_fill.json()["user_id"], u_no_info["user_id"])
+        self.assertEqual(r_fill.json()["gender"], "여")
+        r_now_ok = self.client.post(f"/meetups/{m_id}/participants", json={"user_id": u_no_info["user_id"]})
+        self.assertEqual(r_now_ok.status_code, 201, r_now_ok.text)
+
+    def test_user_update_rules(self):
+        u = self.client.post("/users", json={"nickname": "하늘", "age_group": "20대"}).json()
+
+        # 보낸 칸만 바뀐다
+        r = self.client.patch(f"/users/{u['user_id']}", json={"nickname": "하늘2"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["nickname"], "하늘2")
+        self.assertEqual(r.json()["age_group"], "20대")
+
+        # "선택 안 함"·빈 값은 지움으로 저장
+        r = self.client.patch(f"/users/{u['user_id']}", json={"age_group": "선택 안 함", "gender": ""})
+        self.assertEqual(r.status_code, 200)
+        self.assertIsNone(r.json()["age_group"])
+        self.assertIsNone(r.json()["gender"])
+
+        # 닉네임은 비울 수 없다
+        r = self.client.patch(f"/users/{u['user_id']}", json={"nickname": "  "})
+        self.assertEqual(r.status_code, 400)
+
+        # 없는 이용자 → 404
+        r = self.client.patch("/users/999999", json={"nickname": "유령"})
+        self.assertEqual(r.status_code, 404)
+        r = self.client.get("/users/999999")
+        self.assertEqual(r.status_code, 404)
+        r = self.client.get(f"/users/{u['user_id']}")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()["nickname"], "하늘2")
+
 
 if __name__ == "__main__":
     unittest.main()

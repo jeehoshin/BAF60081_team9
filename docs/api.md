@@ -21,6 +21,19 @@ QR 이용자 등록.
 
 **응답** `201` — `user_id`, `nickname`, …
 
+## GET /users/{user_id} · PATCH /users/{user_id}
+
+내 정보 조회·수정. 합류 화면(`register.html`)에서 이미 합류한 사람이 연령대·성별을 나중에 채울 때 쓴다.
+같은 `user_id`를 유지하므로 참여한 모임·메시지는 그대로 남는다.
+
+**PATCH 입력** — 보낸 칸만 바뀐다. 빈 문자열·`"선택 안 함"`은 지움(`null`)으로 저장. `nickname`은 비울 수 없다 (`400`).
+
+```json
+{ "gender": "여", "age_group": "30대" }
+```
+
+**응답** `200` — `POST /users`와 같은 모양. 없는 이용자면 `404`.
+
 ## GET /activities
 
 활동 목록. 쿼리: `region`, `type`, `date_from`, `date_to`.

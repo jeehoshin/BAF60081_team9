@@ -1,5 +1,6 @@
 (function () {
-  const { api, UserStore, renderUserBox, setStatus, escapeHtml, fmtDate, typeStyle } = window.Gachi;
+  const { api, UserStore, renderUserBox, setStatus, escapeHtml, fmtDate, typeStyle,
+    meetupState, hostFilterProblem, condBadges, reasonNote } = window.Gachi;
   const KAIST = [36.3700, 127.3620];
 
   renderUserBox();
@@ -40,15 +41,32 @@
     return members.length ? members.join(", ") : "아직 없음";
   }
 
+  // 내가 이미 들어간 모임인지 (member_details 또는 닉네임 목록으로 판단)
+  function isJoined(card, user) {
+    if (!user) return false;
+    const details = card.who.member_details || [];
+    return details.some((d) => d.user_id === user.user_id) || card.who.members.includes(user.nickname);
+  }
+
   function cardHtml(card, compact = false) {
     const s = typeStyle(card.activity.type);
-    const gBadge = card.gender_filter ? `<span class="pill warn">${escapeHtml(card.gender_filter === "여" ? "여성만" : card.gender_filter === "남" ? "남성만" : card.gender_filter)}</span>` : "";
-    const aBadge = card.age_filter ? `<span class="pill warn">${escapeHtml(card.age_filter)}만</span>` : "";
+    const user = UserStore.get();
+    const ev = meetupState(card, user, isJoined(card, user));
+    let joinBtn;
+    if (ev.state === "joined") {
+      joinBtn = `<span class="pill">참여 중</span>`;
+    } else if (ev.state === "full") {
+      joinBtn = `<button type="button" disabled>마감</button>`;
+    } else if (ev.disabled) {
+      joinBtn = `<button type="button" disabled>참여 불가</button>`;
+    } else {
+      joinBtn = `<button type="button" data-join="${card.meetup_id}">같이 갈래!</button>`;
+    }
     return `
-      <div class="m-card ${compact ? "compact" : ""}" style="--c:${s.color}">
+      <div class="m-card ${compact ? "compact" : ""} ${ev.disabled ? "disabled-card" : ""}" style="--c:${s.color}">
         <div class="m-top">
           <span class="type-tag">${s.emoji} ${escapeHtml(card.activity.type)}</span>
-          ${gBadge}${aBadge}
+          ${condBadges(card)}
           <span class="muted">${escapeHtml(card.activity.title)}</span>
         </div>
         <h3>${escapeHtml(card.name)}</h3>
@@ -58,8 +76,9 @@
           <dt>어디서</dt><dd>${escapeHtml(card.where.place_name || "장소 미정")}</dd>
           <dt>어떻게</dt><dd>${escapeHtml(card.how || "자유롭게")}</dd>
         </dl>
+        ${reasonNote(ev)}
         <div class="actions">
-          <button type="button" data-join="${card.meetup_id}">같이 갈래!</button>
+          ${joinBtn}
           <a href="talk.html?meetup=${card.meetup_id}"><button type="button" class="secondary">💬 모임톡 ${card.message_count || ""}</button></a>
         </div>
       </div>`;
@@ -207,6 +226,12 @@
       lng: picked.lng,
       meet_at: fd.get("meet_at"),
     };
+    // 호스트가 자기 조건을 못 맞추면 서버가 거절하므로 보내기 전에 알려준다
+    const hostProblem = hostFilterProblem(user, payload.gender_filter, payload.age_filter);
+    if (hostProblem) {
+      setStatus(document.getElementById("createStatus"), hostProblem, false);
+      return;
+    }
     try {
       const m = await api("/meetups", { method: "POST", body: JSON.stringify(payload) });
       dlg.close();

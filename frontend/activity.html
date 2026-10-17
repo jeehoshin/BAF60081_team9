@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>활동 상세 · 같이 갈래?</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-  <link rel="stylesheet" href="styles.css?v=campus4">
+  <link rel="stylesheet" href="styles.css?v=campus5">
 </head>
 <body>
   <div class="wrap">
@@ -57,7 +57,8 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    const { api, renderUserBox, UserStore, escapeHtml, fmtDate, fmtPeriod, fmtPerson, safeUrl, setStatus } = window.Gachi;
+    const { api, renderUserBox, UserStore, escapeHtml, fmtDate, fmtPeriod, fmtPerson, safeUrl, setStatus,
+      meetupState, hostFilterProblem, condBadges, reasonNote } = window.Gachi;
     renderUserBox();
     const id = new URLSearchParams(location.search).get("id");
     const root = document.getElementById("detail");
@@ -73,44 +74,6 @@
       if (Number.isNaN(d.getTime())) return String(iso).slice(0, 16);
       const pad = (n) => String(n).padStart(2, "0");
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-
-    function evaluateMeetupState(m, user, joinedSet) {
-      if (joinedSet.has(m.meetup_id)) {
-        return { state: "joined", disabled: false, reason: "" };
-      }
-      if (m.participant_count >= m.capacity) {
-        return { state: "full", disabled: true, reason: "정원이 마감되었어요" };
-      }
-      const hasGenderFilter = Boolean(m.gender_filter);
-      const hasAgeFilter = Boolean(m.age_filter);
-      if (hasGenderFilter || hasAgeFilter) {
-        const userGender = user?.gender && user.gender !== "선택 안 함" ? user.gender : "";
-        const userAge = user?.age_group && user.age_group !== "선택 안 함" ? user.age_group : "";
-        if ((hasGenderFilter && !userGender) || (hasAgeFilter && !userAge)) {
-          return {
-            state: "missing_info",
-            disabled: true,
-            reason: "참여 조건이 있는 모임이에요. 연령대·성별을 입력해 주세요",
-          };
-        }
-        if (hasGenderFilter && userGender !== m.gender_filter) {
-          const gLabel = m.gender_filter === "여" ? "여성" : m.gender_filter === "남" ? "남성" : m.gender_filter;
-          return {
-            state: "gender_mismatch",
-            disabled: true,
-            reason: `이 모임은 ${gLabel}만 참여할 수 있어요`,
-          };
-        }
-        if (hasAgeFilter && userAge !== m.age_filter) {
-          return {
-            state: "age_mismatch",
-            disabled: true,
-            reason: `이 모임은 ${m.age_filter}만 참여할 수 있어요`,
-          };
-        }
-      }
-      return { state: "ok", disabled: false, reason: "" };
     }
 
     async function loadMessages(meetupId) {
@@ -232,10 +195,8 @@
         `;
         const meetups = document.getElementById("meetups");
         meetups.innerHTML = currentMeetups.map((m) => {
-          const ev = evaluateMeetupState(m, user, joinedSet);
+          const ev = meetupState(m, user, joinedSet.has(m.meetup_id));
           const isHost = user && m.host_id === user.user_id;
-          const gBadge = m.gender_filter ? `<span class="pill warn">${escapeHtml(m.gender_filter === "여" ? "여성만" : m.gender_filter === "남" ? "남성만" : m.gender_filter)}</span>` : "";
-          const aBadge = m.age_filter ? `<span class="pill warn">${escapeHtml(m.age_filter)}만</span>` : "";
           const joinedBadge = ev.state === "joined" ? `<span class="pill">참여 중</span>` : "";
           let actionBtn = "";
           if (ev.state === "joined") {
@@ -250,8 +211,7 @@
           return `
           <article class="card ${ev.disabled ? "disabled-card" : ""}">
             <div style="display:flex;flex-wrap:wrap;gap:6px">
-              ${joinedBadge}${gBadge}${aBadge}
-              ${!gBadge && !aBadge ? `<span class="pill">조건 무관</span>` : ""}
+              ${joinedBadge}${condBadges(m, true)}
             </div>
             <h3>${escapeHtml(m.name)}</h3>
             <div class="meta">
@@ -260,7 +220,7 @@
               ${m.place_name ? `<span>📍 ${escapeHtml(m.place_name)}</span>` : ""}
             </div>
             ${m.how ? `<p class="hint" style="margin:0">${escapeHtml(m.how)}</p>` : ""}
-            ${ev.reason ? `<p class="reason-note">🔒 ${escapeHtml(ev.reason)}</p>` : ""}
+            ${reasonNote(ev)}
             <div class="actions">
               ${actionBtn}
               <button type="button" class="secondary" data-chat="${m.meetup_id}">채팅 보기</button>
@@ -330,6 +290,12 @@
           };
           const meetAt = fd.get("meet_at");
           if (meetAt) payload.meet_at = meetAt;
+          // 호스트가 자기 조건을 못 맞추면 서버가 거절하므로 보내기 전에 알려준다
+          const hostProblem = hostFilterProblem(u, payload.gender_filter, payload.age_filter);
+          if (hostProblem) {
+            setStatus(document.getElementById("formStatus"), hostProblem, false);
+            return;
+          }
           try {
             const m = await api("/meetups", { method: "POST", body: JSON.stringify(payload) });
             setStatus(document.getElementById("formStatus"), "모임이 개설되었습니다.", true);

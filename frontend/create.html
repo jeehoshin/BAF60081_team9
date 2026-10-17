@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>모임 만들기 · 같이 갈래?</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-  <link rel="stylesheet" href="styles.css?v=campus4">
+  <link rel="stylesheet" href="styles.css?v=campus5">
 </head>
 <body>
   <div class="wrap">
@@ -109,12 +109,14 @@
   <script src="config.js"></script>
   <script src="app.js"></script>
   <script>
-    const { api, renderUserBox, setStatus, UserStore } = window.Gachi;
+    const { api, renderUserBox, setStatus, UserStore, hostFilterProblem } = window.Gachi;
     renderUserBox();
     const openNowChk = document.getElementById("openMeetupNow");
     const extraBox = document.getElementById("meetupExtra");
     if (!UserStore.get()) {
+      // 합류 전에는 모임을 열 수 없으므로 체크 자체를 잠근다 (켜도 조용히 무시되는 일이 없게)
       openNowChk.checked = false;
+      openNowChk.disabled = true;
       extraBox.style.display = "none";
       setStatus(document.getElementById("status"), "닉네임 합류 후 올리면 첫 모임도 한 번에 열 수 있어요.", true);
     }
@@ -138,28 +140,53 @@
         source: "user",
       };
       if (starts) payload.starts_at = starts;
-      try {
-        const a = await api("/activities", { method: "POST", body: JSON.stringify(payload) });
-        const user = UserStore.get();
-        if (openNowChk.checked && user) {
-          const mPayload = {
-            activity_id: a.activity_id,
-            host_id: user.user_id,
-            name: (fd.get("meetup_name") || "").trim() || `${title} 같이 뛰어요`,
-            capacity: Number(fd.get("capacity") || 4),
-            place_name: place,
-            how: fd.get("how") || null,
-            gender_filter: fd.get("gender_filter") || null,
-            age_filter: fd.get("age_filter") || null,
-          };
-          if (starts) mPayload.meet_at = starts;
-          await api("/meetups", { method: "POST", body: JSON.stringify(mPayload) });
+      const user = UserStore.get();
+      const openNow = openNowChk.checked && user;
+      const statusEl = document.getElementById("status");
+
+      // 활동을 저장하기 전에 호스트 조건부터 확인한다. 저장 뒤에 모임만 실패하면 활동이 혼자 남기 때문.
+      if (openNow) {
+        const hostProblem = hostFilterProblem(user, fd.get("gender_filter"), fd.get("age_filter"));
+        if (hostProblem) {
+          setStatus(statusEl, hostProblem, false);
+          return;
         }
-        setStatus(document.getElementById("status"), `등록 완료! 상세 화면으로 이동합니다 (#${a.activity_id})`, true);
-        setTimeout(() => { location.href = `activity.html?id=${a.activity_id}`; }, 700);
-      } catch (err) {
-        setStatus(document.getElementById("status"), err.message, false);
       }
+
+      let a;
+      try {
+        a = await api("/activities", { method: "POST", body: JSON.stringify(payload) });
+      } catch (err) {
+        setStatus(statusEl, err.message, false);
+        return;
+      }
+
+      let meetupNote = "";
+      if (openNow) {
+        const mPayload = {
+          activity_id: a.activity_id,
+          host_id: user.user_id,
+          name: (fd.get("meetup_name") || "").trim() || `${title} 같이 뛰어요`,
+          capacity: Number(fd.get("capacity") || 4),
+          place_name: place,
+          how: fd.get("how") || null,
+          gender_filter: fd.get("gender_filter") || null,
+          age_filter: fd.get("age_filter") || null,
+        };
+        if (starts) mPayload.meet_at = starts;
+        try {
+          const m = await api("/meetups", { method: "POST", body: JSON.stringify(mPayload) });
+          // 모임까지 열렸으면 바로 모임톡으로 보낸다
+          setStatus(statusEl, `등록 완료! 첫 모임톡방으로 이동합니다 (#${a.activity_id})`, true);
+          setTimeout(() => { location.href = `talk.html?meetup=${m.meetup_id}`; }, 700);
+          return;
+        } catch (err) {
+          // 활동은 이미 저장됐으니 상세 화면으로 보내고, 모임은 거기서 다시 열 수 있게 안내
+          meetupNote = ` (모임은 열리지 않았어요: ${err.message} — 상세 화면에서 다시 열 수 있어요)`;
+        }
+      }
+      setStatus(statusEl, `활동 등록 완료! 상세 화면으로 이동합니다 (#${a.activity_id})${meetupNote}`, !meetupNote);
+      setTimeout(() => { location.href = `activity.html?id=${a.activity_id}`; }, meetupNote ? 2500 : 700);
     });
   </script>
 </body>

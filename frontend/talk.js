@@ -1,5 +1,6 @@
 (function () {
-  const { api, UserStore, escapeHtml, fmtDate, fmtTime, fmtPerson, typeStyle, setStatus } = window.Gachi;
+  const { api, UserStore, escapeHtml, fmtDate, fmtTime, fmtPerson, typeStyle, setStatus,
+    meetupState, condBadges } = window.Gachi;
   const user = UserStore.get();
   const params = new URLSearchParams(location.search);
   let activeId = params.get("meetup") ? Number(params.get("meetup")) : null;
@@ -128,7 +129,8 @@
       card.who.members.includes(user.nickname)
     );
     const isHost = user && card.who.host_id === user.user_id;
-    const full = card.who.count >= card.who.capacity;
+    // 참여 가능 여부(정원·성별·연령대)를 activity/map 화면과 같은 규칙으로 판정
+    const ev = meetupState(card, user, Boolean(joined));
 
     const peopleHtml = details.length
       ? details
@@ -138,10 +140,10 @@
           .map((n) => `<span class="pill">${escapeHtml(n)}${n === card.who.host ? " 👑" : ""}</span>`)
           .join(" ");
 
-    const condBadges = [
-      card.gender_filter ? `<span class="pill warn">${escapeHtml(card.gender_filter === "여" ? "여성만" : card.gender_filter === "남" ? "남성만" : card.gender_filter)}</span>` : "",
-      card.age_filter ? `<span class="pill warn">${escapeHtml(card.age_filter)}만</span>` : "",
-    ].filter(Boolean).join(" ");
+    let joinBarMsg = "참여하면 대화에 들어갈 수 있어요";
+    if (ev.disabled) joinBarMsg = `🔒 ${ev.reason}`;
+    else if (ev.reason) joinBarMsg = ev.reason;
+    const joinBarFix = ev.state === "missing_info" ? `<a href="register.html"><button type="button" class="secondary">내 정보 입력</button></a>` : "";
 
     roomEl.innerHTML = `
       <header class="room-head" style="--c:${s.color}">
@@ -149,7 +151,7 @@
           <span class="type-tag">${s.emoji} ${escapeHtml(card.activity.type)}</span>
           <h2>${escapeHtml(card.name)}</h2>
           <a href="activity.html?id=${card.activity.activity_id}" class="muted">${escapeHtml(card.activity.title)}</a>
-          ${condBadges}
+          ${condBadges(card)}
           ${isHost ? `<button type="button" class="secondary" id="editRoomBtn" style="margin-left:auto;padding:5px 10px;font-size:0.8rem">✏️ 모임 수정</button>` : ""}
         </div>
         <div class="room-info">
@@ -177,9 +179,9 @@
                  <button type="submit">보내기</button>
                </div>
              </form>`
-          : `<div class="join-bar">
-               <span>${full ? "정원이 다 찼어요" : "참여하면 대화에 들어갈 수 있어요"}</span>
-               ${full ? "" : `<button type="button" id="joinBtn" class="bun">같이 갈래!</button>`}
+          : `<div class="join-bar ${ev.disabled ? "locked" : ""}">
+               <span>${escapeHtml(joinBarMsg)}</span>
+               ${ev.disabled ? joinBarFix : `<button type="button" id="joinBtn" class="bun">같이 갈래!</button>`}
              </div>`
       }`;
 
