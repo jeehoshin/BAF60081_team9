@@ -88,7 +88,7 @@
       }
     }
     tick();
-    setInterval(tick, 3000);
+    setInterval(() => { if (!document.hidden) tick(); }, 3000); // 발표 화면용이라 3초 유지, 탭이 안 보일 땐 쉰다
   </script>
 </body>
 </html>

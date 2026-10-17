@@ -5,7 +5,7 @@ Swagger UI: `{BASE}/docs`
 
 ## POST /users
 
-QR 이용자 등록.
+QR 이용자 등록. `gender`는 `남`·`여`, `age_group`은 `20대`·`30대`·`40대`·`50대 이상`만 받는다(그 외 `422`). 빈 값이나 `선택 안 함`은 `null`로 저장. 같은 닉네임(대소문자·앞뒤 공백 무시)은 `409`.
 
 **입력**
 
@@ -23,7 +23,7 @@ QR 이용자 등록.
 
 ## GET /activities
 
-활동 목록. 쿼리: `region`, `type`, `date_from`, `date_to`.
+활동 목록. 쿼리: `region`, `type`, `date_from`, `date_to`, `limit`(기본 1000, 최대 2000), `offset`(기본 0).
 
 - 날짜 조건은 **기간 겹침**으로 거른다 (공연·축제는 `starts_at`~`ends_at` 기간이 범위와 하루라도 겹치면 나옴)
 - 정렬: 지금 볼 수 있거나 곧 시작하는 것 먼저, 이미 끝난 것은 맨 뒤
@@ -54,11 +54,11 @@ QR 이용자 등록.
 
 ## POST /activities
 
-사용자 활동 등록 (러닝 등). `source` 기본값 `user`.
+사용자 활동 등록. 유형은 `러닝`만 가능하고(그 외 `400`), `source`는 보내도 무시하고 항상 `user`로 저장한다.
 
 ## POST /meetups
 
-모임 개설. 호스트는 자동 참여. 정원(`capacity`)은 4~20명(기본 4명), 성별(`gender_filter`)·연령대(`age_filter`) 조건 설정 가능.
+모임 개설. 호스트는 자동 참여. 정원(`capacity`)은 4~20명(기본 4명), 성별(`gender_filter`)·연령대(`age_filter`) 조건 설정 가능. 이름은 1~128자, 이미 지난 `meet_at`은 `400`(5분 여유).
 
 ```json
 {
@@ -74,7 +74,7 @@ QR 이용자 등록.
 
 ## PATCH /meetups/{meetup_id}
 
-모임 정보 수정 (호스트 전용). `host_id`가 모임 개설자와 일치해야 수정된다 (`403` 호스트 불일치).
+모임 정보 수정 (호스트 전용). `host_id`가 모임 개설자와 일치해야 수정된다 (`403` 호스트 불일치). 조건을 바꿀 때 호스트나 현재 참여자 중 새 조건에 맞지 않는 사람이 있으면 `400`. `meet_at`은 값이 바뀔 때만 지난 시각인지 검사한다.
 
 ```json
 {
@@ -88,6 +88,12 @@ QR 이용자 등록.
   "age_filter": "20대"
 }
 ```
+
+## DELETE /meetups/{meetup_id}/participants/{user_id}
+
+모임 나가기. 호스트는 나갈 수 없다(`400`). 참여하지 않은 이용자·없는 모임은 `404`.
+
+**응답** `200` — `{"ok": true, "meetup_id": 3, "user_id": 2, "participant_count": 3}`
 
 ## POST /meetups/{meetup_id}/participants
 

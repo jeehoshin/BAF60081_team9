@@ -162,7 +162,7 @@
     }
     load();
     loadKopis();
-    setInterval(load, 15000);
+    setInterval(() => { if (!document.hidden) load(); }, 15000);
   </script>
 </body>
 </html>

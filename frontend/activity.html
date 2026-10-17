@@ -140,7 +140,7 @@
       ).join(" ") || `<span class="hint">참여자 없음</span>`;
       await loadMessages(meetupId);
       if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(() => loadMessages(meetupId), 3000);
+      pollTimer = setInterval(() => { if (!document.hidden) loadMessages(meetupId); }, 5000);
     }
 
     async function load() {
@@ -239,7 +239,8 @@
           const joinedBadge = ev.state === "joined" ? `<span class="pill">참여 중</span>` : "";
           let actionBtn = "";
           if (ev.state === "joined") {
-            actionBtn = `<a href="talk.html?meetup=${m.meetup_id}"><button type="button" class="bun">💬 모임톡 바로가기</button></a>`;
+            actionBtn = `<a href="talk.html?meetup=${m.meetup_id}"><button type="button" class="bun">💬 모임톡 바로가기</button></a>`
+              + (isHost ? "" : `<button type="button" class="secondary" data-leave="${m.meetup_id}">나가기</button>`);
           } else if (ev.state === "full") {
             actionBtn = `<button type="button" disabled>마감</button>`;
           } else if (ev.disabled) {
@@ -290,6 +291,21 @@
               });
               await load();
               openChat(Number(btn.dataset.join));
+            } catch (e) { alert(e.message); }
+          });
+        });
+        meetups.querySelectorAll("[data-leave]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const u = UserStore.get();
+            if (!u) return location.href = "register.html";
+            if (!confirm("이 모임에서 나갈까요? 나가면 채팅도 닫혀요.")) return;
+            try {
+              await api(`/meetups/${btn.dataset.leave}/participants/${u.user_id}`, { method: "DELETE" });
+              if (activeMeetupId === Number(btn.dataset.leave)) {
+                activeMeetupId = null;
+                if (pollTimer) clearInterval(pollTimer);
+              }
+              await load();
             } catch (e) { alert(e.message); }
           });
         });

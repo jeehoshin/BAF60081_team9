@@ -99,7 +99,7 @@
   }
 
   async function pollMessages() {
-    if (!activeId) return;
+    if (!activeId || document.hidden) return; // 탭이 안 보일 땐 쉰다
     try {
       renderMessages(await api(`/meetups/${activeId}/messages`));
     } catch (e) {
@@ -128,6 +128,7 @@
       card.who.members.includes(user.nickname)
     );
     const isHost = user && card.who.host_id === user.user_id;
+    const canLeave = joined && !isHost; // 호스트는 나갈 수 없음
     const full = card.who.count >= card.who.capacity;
 
     const peopleHtml = details.length
@@ -151,6 +152,7 @@
           <a href="activity.html?id=${card.activity.activity_id}" class="muted">${escapeHtml(card.activity.title)}</a>
           ${condBadges}
           ${isHost ? `<button type="button" class="secondary" id="editRoomBtn" style="margin-left:auto;padding:5px 10px;font-size:0.8rem">✏️ 모임 수정</button>` : ""}
+          ${canLeave ? `<button type="button" class="secondary" id="leaveRoomBtn" style="margin-left:auto;padding:5px 10px;font-size:0.8rem">나가기</button>` : ""}
         </div>
         <div class="room-info">
           <dl class="w4">
@@ -195,6 +197,30 @@
         editForm.elements.how.value = card.how || "";
         setStatus(document.getElementById("editRoomStatus"), "", true);
         editDlg.showModal();
+      };
+    }
+
+    const leaveBtn = document.getElementById("leaveRoomBtn");
+    if (leaveBtn) {
+      leaveBtn.onclick = async () => {
+        if (!confirm("이 모임에서 나갈까요? 나가면 채팅도 닫혀요.")) return;
+        try {
+          await api(`/meetups/${id}/participants/${user.user_id}`, { method: "DELETE" });
+        } catch (e) {
+          alert(e.message);
+          return;
+        }
+        if (pollTimer) clearInterval(pollTimer);
+        const rooms = await loadRooms();
+        const next = rooms.find((r) => r.meetup_id !== id);
+        if (next) {
+          history.replaceState(null, "", `talk.html?meetup=${next.meetup_id}`);
+          openRoom(next.meetup_id);
+        } else {
+          activeId = null;
+          history.replaceState(null, "", "talk.html");
+          roomEl.innerHTML = `<p class="hint" style="padding:20px">모임에서 나갔어요. <a href="map.html">지도</a>에서 다른 모임을 골라보세요!</p>`;
+        }
       };
     }
 
@@ -258,7 +284,7 @@
     }
 
     await pollMessages();
-    pollTimer = setInterval(pollMessages, 2000);
+    pollTimer = setInterval(pollMessages, 4000);
     document.querySelectorAll(".room-item").forEach((a) => a.classList.toggle("on", Number(a.dataset.room) === id));
   }
 
@@ -305,6 +331,6 @@
     const rooms = await loadRooms();
     if (!activeId && rooms.length) activeId = rooms[0].meetup_id;
     if (activeId) openRoom(activeId);
-    setInterval(loadRooms, 6000);
+    setInterval(() => { if (!document.hidden) loadRooms(); }, 10000);
   })();
 })();

@@ -40,6 +40,11 @@ async function api(path, options = {}) {
   }
   if (!res.ok) {
     const detail = data?.detail || data || res.statusText;
+    // 입력 검사(422)는 [{msg: "Value error, …"}] 목록으로 온다 → 사람이 읽을 문장만 꺼낸다
+    if (Array.isArray(detail)) {
+      const msgs = detail.map((d) => String(d?.msg || "").replace(/^Value error, /, "")).filter(Boolean);
+      throw new Error(msgs.join(" / ") || "입력값을 확인해 주세요.");
+    }
     throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
   }
   return data;

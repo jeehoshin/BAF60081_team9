@@ -219,5 +219,5 @@
   });
 
   load();
-  setInterval(load, 8000);
+  setInterval(() => { if (!document.hidden) load(); }, 15000);
 })();
