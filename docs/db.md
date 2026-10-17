@@ -11,6 +11,7 @@ PostgreSQL (Supabase). SQL 생성 스크립트: [db_schema.sql](db_schema.sql)
 | likes | id (+ unique user_id,activity_id) | user_id, activity_id | created_at | 좋아요 (선택) |
 | messages | message_id | meetup_id, user_id | body, created_at | 모임 채팅 (발표 소통) |
 | kopis_stats | id (+ unique kind, period_from, period_to, label) | — | kind, label, level, amount, performance_count, audience | KOPIS 통계 수집 (`POST /collect/kopis-stats`) |
+| collect_runs | id | — | kind, trigger, dry_run, started_at, window_*, collected, inserted, updated, skipped, error_count, details | 수집 실행 기록 (`POST /collect`, `POST /collect/kopis-stats`, `scripts/`) |
 
 ## activities의 공공 API 칸
 
@@ -39,6 +40,23 @@ PostgreSQL (Supabase). SQL 생성 스크립트: [db_schema.sql](db_schema.sql)
 | `tickets`, `cancels`, `audience` | 예매 수(취소 포함), 취소 수, 순 관객 수. KOPIS 항목 이름이 API마다 달라서(지역별 `nmrs`=예매, 일별 `nmrs`=순 관객) 여기서 뜻을 맞춘다. 장르별은 `audience`에 KOPIS `nmrs` 원본 |
 | `seats` | 좌석 수 (`area`만) |
 | `amount_share`, `audience_share` | KOPIS가 계산해 주는 비중 % (`genre`만) |
+
+## collect_runs (수집 실행 기록, 기획 3-6)
+
+수집이 돌 때마다 한 줄. 다른 테이블과 연결하지 않는다. 분석 페이지 '데이터 품질'의 "최근 수집 기록"과 `GET /stats/collect-runs`에 쓴다.
+
+| 칸 | 내용 |
+|----|------|
+| `kind` | `activities`(행사 수집) / `kopis_stats`(KOPIS 통계) |
+| `trigger` | `api`(Swagger) / `cli`(`scripts/`) |
+| `dry_run` | 미리보기 실행이면 `true` (저장 안 함). "마지막 실제 수집"을 고를 때는 뺀다 |
+| `started_at`, `finished_at` | 시작·끝 시각 (KST) |
+| `window_from`, `window_to` | 수집 대상 기간 (행사: 오늘~N일, 통계: 받은 달의 처음~끝) |
+| `collected` | API에서 받아 저장 대상으로 남은 건수 |
+| `inserted`, `updated`, `unchanged` | 새로 넣음 / 내용이 바뀌어 고침 / 그대로 (통계는 `inserted`에 저장 행 수) |
+| `skipped` | 기간 밖·장기 행사·구 불명 등으로 뺀 건수 합. 이유별 수는 `details`의 `results[].skipped` |
+| `error_count`, `ok` | 출처·지역 단위 오류 수, 오류가 없으면 `ok=true` |
+| `details` | 그때의 옵션과 출처·지역별 결과 전체 (JSON 문자열) |
 
 ## 관계
 

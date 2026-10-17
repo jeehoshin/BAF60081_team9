@@ -234,12 +234,16 @@ def collect(
     dry_run: bool = False,
     transport: httpx.AsyncBaseTransport | None = None,
     today: date | None = None,
+    trigger: str = "api",
 ) -> dict:
-    """KOPIS 통계를 받아 저장하고 요약을 돌려준다."""
+    """KOPIS 통계를 받아 저장하고 요약을 돌려준다. db가 있으면 collect_runs에 실행 기록도 남긴다."""
     if not key.strip():
         raise CollectError("KOPIS_API_KEY가 없어서 통계를 받을 수 없어요.")
     if not 1 <= months <= 12:
         raise ValueError("months는 1~12 사이여야 해요.")
+    from app.collectors.runs import record_run
+    from app.models import now_kst
+    started_at = now_kst()
     rows, reports = asyncio.run(gather_rows(key, months, transport=transport, today=today))
     saved = 0
     if not dry_run and rows:
@@ -251,7 +255,7 @@ def collect(
     total = [r for r in rows if r["kind"] == "area" and r["level"] == "합계"]
     seoul_amount = sum(r["amount"] or 0 for r in seoul)
     total_amount = sum(r["amount"] or 0 for r in total)
-    return {
+    summary = {
         "dry_run": dry_run,
         "period": {
             "from": periods[0][0].isoformat() if periods else None,
@@ -264,3 +268,10 @@ def collect(
             "seoul_amount_share_percent": round(seoul_amount / total_amount * 100, 1) if total_amount else None,
         },
     }
+    summary["run_id"] = record_run(
+        db, "kopis_stats", started_at, summary,
+        trigger=trigger, dry_run=dry_run,
+        window_from=periods[0][0] if periods else None, window_to=periods[-1][1] if periods else None,
+        collected=len(rows), inserted=saved, error_count=sum(1 for r in reports if r.error),
+    )
+    return summary

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>같이 갈래? · KAIST 친구 모임</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
-  <link rel="stylesheet" href="styles.css?v=campus5">
+  <link rel="stylesheet" href="styles.css?v=campus6">
 </head>
 <body>
   <div class="wrap">
@@ -49,18 +49,21 @@
         <label>지역
           <select id="region">
             <option value="">전체</option>
+            <!-- '중구'는 서울·대전에 다 있어서 data-city로 도시를 같이 보낸다 (API의 city 조건) -->
             <optgroup label="대전">
-              <option>유성구</option><option>서구</option><option>중구</option>
-              <option>동구</option><option>대덕구</option>
+              <option value="" data-city="대전">대전 전체</option>
+              <option data-city="대전">유성구</option><option data-city="대전">서구</option><option data-city="대전">중구</option>
+              <option data-city="대전">동구</option><option data-city="대전">대덕구</option>
             </optgroup>
             <optgroup label="서울">
-              <option>강남구</option><option>강동구</option><option>강북구</option><option>강서구</option>
-              <option>관악구</option><option>광진구</option><option>구로구</option><option>금천구</option>
-              <option>노원구</option><option>도봉구</option><option>동대문구</option><option>동작구</option>
-              <option>마포구</option><option>서대문구</option><option>서초구</option><option>성동구</option>
-              <option>성북구</option><option>송파구</option><option>양천구</option><option>영등포구</option>
-              <option>용산구</option><option>은평구</option><option>종로구</option><option>중구</option>
-              <option>중랑구</option>
+              <option value="" data-city="서울">서울 전체</option>
+              <option data-city="서울">강남구</option><option data-city="서울">강동구</option><option data-city="서울">강북구</option><option data-city="서울">강서구</option>
+              <option data-city="서울">관악구</option><option data-city="서울">광진구</option><option data-city="서울">구로구</option><option data-city="서울">금천구</option>
+              <option data-city="서울">노원구</option><option data-city="서울">도봉구</option><option data-city="서울">동대문구</option><option data-city="서울">동작구</option>
+              <option data-city="서울">마포구</option><option data-city="서울">서대문구</option><option data-city="서울">서초구</option><option data-city="서울">성동구</option>
+              <option data-city="서울">성북구</option><option data-city="서울">송파구</option><option data-city="서울">양천구</option><option data-city="서울">영등포구</option>
+              <option data-city="서울">용산구</option><option data-city="서울">은평구</option><option data-city="서울">종로구</option><option data-city="서울">중구</option>
+              <option data-city="서울">중랑구</option>
             </optgroup>
           </select>
         </label>

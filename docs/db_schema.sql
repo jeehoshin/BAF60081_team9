@@ -112,3 +112,24 @@ create table if not exists kopis_stats (
   collected_at timestamp default now(),
   constraint uq_kopis_stats_row unique (kind, period_from, period_to, label)
 );
+
+-- 수집 실행 기록 (기획 3-6, 2026-10). POST /collect, POST /collect/kopis-stats, scripts/ 가 돌 때마다 한 줄.
+-- 백엔드가 시작할 때 없으면 자동으로 만든다. 분석 페이지 '데이터 품질'의 "마지막 수집" 근거.
+create table if not exists collect_runs (
+  id serial primary key,
+  kind varchar(16) not null,            -- activities / kopis_stats
+  trigger varchar(16) default 'api',    -- api(Swagger) / cli(scripts/)
+  dry_run boolean default false,
+  started_at timestamp not null default now(),
+  finished_at timestamp,
+  window_from date,                     -- 수집 대상 기간
+  window_to date,
+  collected integer default 0,          -- 받아서 저장 대상으로 남은 건수
+  inserted integer default 0,
+  updated integer default 0,
+  unchanged integer default 0,
+  skipped integer default 0,            -- 기간 밖·장기 행사·구 불명 등으로 뺀 건수 합
+  error_count integer default 0,        -- 출처·지역 단위 오류 수
+  ok boolean default true,
+  details text                          -- 옵션 + 출처·지역별 결과 (JSON 문자열)
+);

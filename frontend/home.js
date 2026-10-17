@@ -63,10 +63,14 @@
     }
 
     async function load() {
-      const region = document.getElementById("region").value;
+      const regionSel = document.getElementById("region");
+      const region = regionSel.value;
+      // 고른 항목의 도시(data-city). '중구'처럼 두 도시에 다 있는 구와 '서울 전체/대전 전체'를 구분한다
+      const city = regionSel.selectedOptions[0]?.dataset.city || "";
       const type = document.getElementById("type").value;
       const qs = new URLSearchParams();
       if (region) qs.set("region", region);
+      if (city) qs.set("city", city);
       if (type) qs.set("type", type);
       const range = calcDateRange(datePreset);
       if (range) {

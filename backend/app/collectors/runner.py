@@ -15,7 +15,8 @@ from sqlalchemy.orm import Session
 
 from app.collectors import culture, kopis, tourapi
 from app.collectors.common import AREAS, DEFAULT_AREAS, CollectError, SourceReport, today_kst
-from app.models import Activity
+from app.collectors.runs import record_run
+from app.models import Activity, now_kst
 
 SOURCES = {"kopis": kopis.SOURCE, "tour": tourapi.SOURCE, "culture": culture.SOURCE}
 
@@ -148,8 +149,13 @@ def collect(
     dry_run: bool = False,
     transport: httpx.AsyncBaseTransport | None = None,
     culture_key: str = "",
+    trigger: str = "api",
 ) -> dict:
-    """수집해서 저장하고 요약을 돌려준다. dry_run이면 저장하지 않는다."""
+    """수집해서 저장하고 요약을 돌려준다. dry_run이면 저장하지 않는다.
+
+    db가 있으면 dry_run이어도 collect_runs에 실행 기록을 남긴다 (기획 3-6).
+    """
+    started_at = now_kst()
     rows, reports, window_from, window_to = asyncio.run(
         gather_rows(opts, kopis_key=kopis_key, tour_key=tour_key, transport=transport, culture_key=culture_key)
     )
@@ -159,6 +165,18 @@ def collect(
             raise ValueError("저장하려면 DB 세션이 필요해요.")
         inserted, updated = upsert(db, rows)
 
+    summary = _summary(rows, reports, opts, window_from, window_to, dry_run, inserted, updated)
+    summary["run_id"] = record_run(
+        db, "activities", started_at, summary,
+        trigger=trigger, dry_run=dry_run, window_from=window_from, window_to=window_to,
+        collected=len(rows), inserted=inserted, updated=updated, unchanged=summary["unchanged"],
+        skipped=sum(sum(r.skipped.values()) for r in reports),
+        error_count=sum(1 for r in reports if r.error),
+    )
+    return summary
+
+
+def _summary(rows, reports, opts, window_from, window_to, dry_run, inserted, updated) -> dict:
     return {
         "window": {"from": window_from.isoformat(), "to": window_to.isoformat()},
         "options": asdict(opts),
