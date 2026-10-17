@@ -74,6 +74,19 @@ class MeetupCreate(BaseModel):
     age_filter: str | None = None
 
 
+class MeetupUpdate(BaseModel):
+    host_id: int
+    name: str | None = None
+    meet_at: datetime | None = None
+    capacity: int | None = None
+    place_name: str | None = None
+    lat: float | None = None
+    lng: float | None = None
+    how: str | None = None
+    gender_filter: str | None = None
+    age_filter: str | None = None
+
+
 class MeetupOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -107,6 +120,7 @@ class ParticipantOut(BaseModel):
     vote: str | None = None
     nickname: str | None = None
     age_group: str | None = None
+    gender: str | None = None
 
 
 class LikeCreate(BaseModel):

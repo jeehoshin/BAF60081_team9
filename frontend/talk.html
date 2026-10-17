@@ -29,6 +29,42 @@
         </div>
       </section>
     </div>
+
+    <dialog id="editRoomDlg" class="dlg">
+      <form id="editRoomForm" method="dialog" class="grid" style="gap:10px">
+        <h2>모임 정보 수정</h2>
+        <label>모임 이름 * <input name="name" required></label>
+        <div class="grid two">
+          <label>집결 시간 <input name="meet_at" type="datetime-local"></label>
+          <label>정원 (4~20명) <input name="capacity" type="number" min="4" max="20" required></label>
+        </div>
+        <label>집결 장소 <input name="place_name" placeholder="예: KAIST 정문 시계탑"></label>
+        <div class="grid two">
+          <label>성별 조건
+            <select name="gender_filter">
+              <option value="">무관</option>
+              <option value="남">남성만</option>
+              <option value="여">여성만</option>
+            </select>
+          </label>
+          <label>연령대 조건
+            <select name="age_filter">
+              <option value="">무관</option>
+              <option value="20대">20대만</option>
+              <option value="30대">30대만</option>
+              <option value="40대">40대만</option>
+              <option value="50대 이상">50대 이상만</option>
+            </select>
+          </label>
+        </div>
+        <label>어떻게 모일까요? <textarea name="how" placeholder="예: 정문 집결 → 도보 10분 → 끝나고 학식"></textarea></label>
+        <div class="actions">
+          <button type="submit" class="bun">저장하기</button>
+          <button type="button" class="secondary" id="cancelEditRoom">취소</button>
+        </div>
+        <p class="status" id="editRoomStatus"></p>
+      </form>
+    </dialog>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

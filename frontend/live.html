@@ -66,17 +66,22 @@
           <div class="stat"><span>메시지</span><b>${c.messages}</b></div>
         `;
         list(document.getElementById("users"), data.recent_users, (u) =>
-          `<strong>${escapeHtml(u.nickname)}</strong> <span class="muted">${escapeHtml(u.age_group || "")} · ${escapeHtml(u.preferred_types || "")}</span>`
+          `<strong>${escapeHtml(u.nickname)}</strong> <span class="muted">${escapeHtml(u.age_group || "")}${u.preferred_types ? " · " + escapeHtml(u.preferred_types) : ""}</span>`
         );
-        list(document.getElementById("joins"), data.recent_joins, (j) =>
-          `<strong>${escapeHtml(j.nickname)}</strong> → ${escapeHtml(j.meetup_name)} <span class="muted">(${escapeHtml(j.activity_title)})</span>`
-        );
-        list(document.getElementById("messages"), data.recent_messages, (m) =>
-          `<strong>${escapeHtml(m.nickname)}</strong> @${escapeHtml(m.meetup_name)}: ${escapeHtml(m.body)}`
-        );
-        list(document.getElementById("meetups"), data.open_meetups, (m) =>
-          `<strong>${escapeHtml(m.name)}</strong> <span class="muted">${m.participant_count}/${m.capacity} · 호스트 ${escapeHtml(m.host)}</span><br><span class="muted">${escapeHtml(m.activity_title)}</span>`
-        );
+        list(document.getElementById("joins"), data.recent_joins, (j) => {
+          const meetupHref = j.meetup_id ? `talk.html?meetup=${j.meetup_id}` : "#";
+          const actHref = j.activity_id ? `activity.html?id=${j.activity_id}` : "#";
+          return `<strong>${escapeHtml(j.nickname)}</strong> → <a href="${meetupHref}"><b>${escapeHtml(j.meetup_name)}</b></a> <span class="muted">(<a href="${actHref}" class="muted">${escapeHtml(j.activity_title)}</a>)</span>`;
+        });
+        list(document.getElementById("messages"), data.recent_messages, (m) => {
+          const meetupHref = m.meetup_id ? `talk.html?meetup=${m.meetup_id}` : "#";
+          return `<a href="${meetupHref}" class="feed-link"><strong>${escapeHtml(m.nickname)}</strong> <span class="muted">@${escapeHtml(m.meetup_name)}</span>: ${escapeHtml(m.body)}</a>`;
+        });
+        list(document.getElementById("meetups"), data.open_meetups, (m) => {
+          const meetupHref = m.meetup_id ? `talk.html?meetup=${m.meetup_id}` : "#";
+          const actHref = m.activity_id ? `activity.html?id=${m.activity_id}` : "#";
+          return `<div class="feed-meetup"><a href="${meetupHref}"><strong>💬 ${escapeHtml(m.name)}</strong></a> <span class="muted">${m.participant_count}/${m.capacity} · 호스트 ${escapeHtml(m.host)}</span><br><a href="${actHref}" class="muted">📍 ${escapeHtml(m.activity_title)}</a></div>`;
+        });
         setStatus(document.getElementById("status"), `갱신 ${new Date().toLocaleTimeString("ko-KR")}`, true);
       } catch (e) {
         setStatus(document.getElementById("status"), `연결 실패: ${e.message}`, false);

@@ -64,6 +64,8 @@ def live_board(limit: int = 20, db: Session = Depends(get_db)):
         ],
         "recent_joins": [
             {
+                "meetup_id": m.meetup_id,
+                "activity_id": a.activity_id,
                 "nickname": u.nickname,
                 "meetup_name": m.name,
                 "activity_title": a.title,
@@ -73,6 +75,8 @@ def live_board(limit: int = 20, db: Session = Depends(get_db)):
         ],
         "recent_messages": [
             {
+                "meetup_id": m.meetup_id,
+                "activity_id": m.activity_id,
                 "nickname": u.nickname,
                 "meetup_name": m.name,
                 "body": msg.body,
@@ -83,6 +87,7 @@ def live_board(limit: int = 20, db: Session = Depends(get_db)):
         "open_meetups": [
             {
                 "meetup_id": m.meetup_id,
+                "activity_id": a.activity_id,
                 "name": m.name,
                 "activity_title": a.title,
                 "host": host.nickname,

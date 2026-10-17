@@ -14,14 +14,23 @@ def _meetup_cards(db: Session, meetups: list[Meetup]) -> list[dict]:
     ids = [m.meetup_id for m in meetups]
 
     people: dict[int, list[str]] = {i: [] for i in ids}
-    for meetup_id, nickname in (
-        db.query(Participant.meetup_id, User.nickname)
+    member_details: dict[int, list[dict]] = {i: [] for i in ids}
+    for meetup_id, u_id, nickname, age_group, gender in (
+        db.query(Participant.meetup_id, User.user_id, User.nickname, User.age_group, User.gender)
         .join(User, User.user_id == Participant.user_id)
         .filter(Participant.meetup_id.in_(ids))
         .order_by(Participant.joined_at.asc())
         .all()
     ):
         people[meetup_id].append(nickname)
+        member_details[meetup_id].append(
+            {
+                "user_id": u_id,
+                "nickname": nickname,
+                "age_group": age_group,
+                "gender": gender,
+            }
+        )
 
     msg_counts = dict(
         db.query(Message.meetup_id, func.count(Message.message_id))
@@ -44,17 +53,22 @@ def _meetup_cards(db: Session, meetups: list[Meetup]) -> list[dict]:
                     "host": host.nickname if host else None,
                     "host_id": m.host_id,
                     "members": people[m.meetup_id],
+                    "member_details": member_details[m.meetup_id],
                     "count": len(people[m.meetup_id]),
                     "capacity": m.capacity,
                 },
                 "when": m.meet_at or a.starts_at,
+                "meet_at": m.meet_at,
                 "where": {
                     "place_name": m.place_name or a.place,
+                    "raw_place_name": m.place_name,
                     "region": a.region,
                     "lat": lat,
                     "lng": lng,
                 },
                 "how": m.how,
+                "gender_filter": m.gender_filter,
+                "age_filter": m.age_filter,
                 "activity": {
                     "activity_id": a.activity_id,
                     "title": a.title,

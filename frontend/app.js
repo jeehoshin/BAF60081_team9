@@ -173,6 +173,16 @@ function fmtTime(iso) {
   return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 }
 
+function fmtPerson(p) {
+  const name = p?.nickname || (p?.user_id ? `user${p.user_id}` : "?");
+  const age = p?.age_group && p.age_group !== "선택 안 함" ? p.age_group : "";
+  const gen = p?.gender && p.gender !== "선택 안 함" ? p.gender : "";
+  if (age && gen) return `${name} · ${age}(${gen})`;
+  if (age) return `${name} · ${age}`;
+  if (gen) return `${name} · (${gen})`;
+  return `${name} · 정보 비공개`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderNav();
   applyMascot();
@@ -180,6 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.Gachi = {
   api, API, UserStore, setStatus, requireUser, renderUserBox, escapeHtml, fmtDate, fmtTime,
-  fmtPeriod, safeUrl, typeStyle, renderNav, applyMascot,
+  fmtPeriod, fmtPerson, safeUrl, typeStyle, renderNav, applyMascot,
 };
 })();

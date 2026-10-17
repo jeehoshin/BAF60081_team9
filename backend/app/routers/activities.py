@@ -76,6 +76,11 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=ActivityOut, status_code=201)
 def create_activity(payload: ActivityCreate, db: Session = Depends(get_db)):
+    if payload.source == "user" and payload.activity_type != "러닝":
+        raise HTTPException(
+            status_code=400,
+            detail="공연·축제·전시는 공공 API에서 자동으로 수집됩니다. 직접 등록은 '러닝'만 가능합니다.",
+        )
     activity = Activity(**payload.model_dump())
     db.add(activity)
     db.commit()

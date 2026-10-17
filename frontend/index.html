@@ -72,6 +72,12 @@
         </label>
         <button type="button" id="searchBtn">찾아보기</button>
       </div>
+      <div class="chip-row" id="dateFilter" style="margin-top:12px; margin-bottom:4px">
+        <button type="button" class="chip-btn on" data-date="">전체 일정</button>
+        <button type="button" class="chip-btn" data-date="today">오늘</button>
+        <button type="button" class="chip-btn" data-date="weekend">이번 주말</button>
+        <button type="button" class="chip-btn" data-date="nextweek">다음 주</button>
+      </div>
       <p class="status" id="listStatus">불러오는 중…</p>
       <div class="grid cards" id="list" style="margin-top:14px"></div>
     </section>

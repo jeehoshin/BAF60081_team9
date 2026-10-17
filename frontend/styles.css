@@ -383,7 +383,67 @@ button.bun {
   color: var(--kaist-deep);
 }
 .pill.warn { background: #fff1d6; color: #9a6400; }
+.pill.danger { background: #ffe4e1; color: #b52b22; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+button:disabled {
+  background: #dce4f2;
+  color: #7c8aa3;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none !important;
+  filter: none !important;
+}
+.card.disabled-card {
+  background: #f5f7fb;
+  border-color: #dce4f2;
+  color: var(--muted);
+  opacity: 0.78;
+}
+.card.disabled-card::before {
+  background: #b7c3d9;
+}
+.card.disabled-card h3 {
+  color: var(--muted);
+}
+.reason-note {
+  margin: 2px 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #eef2f9;
+  color: #4a5873;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.notice-box {
+  margin: 4px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f3f7ff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.sub-box {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f7faff;
+  border: 1px dashed #b7cff3;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.check-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: var(--kaist);
+}
 
 .stat {
   border: 1px solid var(--line);
@@ -484,6 +544,19 @@ button.bun {
   border: 1px solid var(--line);
   background: #fff;
   font-size: 0.92rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.feed li:hover {
+  border-color: #a9c8f5;
+  background: #f9fbff;
+}
+.feed-link {
+  display: block;
+  color: var(--ink);
+  text-decoration: none !important;
+}
+.feed-link:hover strong {
+  color: var(--kaist);
 }
 .feed .muted, .muted { color: var(--muted); font-size: 0.85rem; }
 

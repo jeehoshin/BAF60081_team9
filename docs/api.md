@@ -58,7 +58,7 @@ QR 이용자 등록.
 
 ## POST /meetups
 
-모임 개설. 호스트는 자동 참여.
+모임 개설. 호스트는 자동 참여. 정원(`capacity`)은 4~20명(기본 4명), 성별(`gender_filter`)·연령대(`age_filter`) 조건 설정 가능.
 
 ```json
 {
@@ -66,13 +66,32 @@ QR 이용자 등록.
   "host_id": 1,
   "name": "같이 가요",
   "meet_at": "2026-10-12T18:30:00",
-  "capacity": 4
+  "capacity": 4,
+  "gender_filter": "여",
+  "age_filter": "30대"
+}
+```
+
+## PATCH /meetups/{meetup_id}
+
+모임 정보 수정 (호스트 전용). `host_id`가 모임 개설자와 일치해야 수정된다 (`403` 호스트 불일치).
+
+```json
+{
+  "host_id": 1,
+  "name": "정문 시계탑 집결 후 같이 관람",
+  "meet_at": "2026-10-12T18:00:00",
+  "capacity": 6,
+  "place_name": "정문 시계탑 앞",
+  "how": "입구 집결 → 관람 → 저녁",
+  "gender_filter": null,
+  "age_filter": "20대"
 }
 ```
 
 ## POST /meetups/{meetup_id}/participants
 
-모임 참여.
+모임 참여. 성별·연령대 조건이 있는 모임은 이용자의 성별·연령대가 입력되어 있고 조건과 일치해야 참여 가능.
 
 ```json
 { "user_id": 2 }
@@ -119,7 +138,7 @@ KOPIS 통계 API(시·도별 `prfstsArea`, 장르별 `prfstsCate`, 일별 `prfst
 
 ## GET /live
 
-발표용 라이브 보드. 최근 등록·참여·메시지·열린 모임 + 카운트.
+발표용 라이브 보드. 최근 등록·참여·메시지·열린 모임(`meetup_id`, `activity_id` 포함) + 카운트.
 
 ## GET/POST /meetups/{meetup_id}/messages
 
@@ -131,4 +150,4 @@ KOPIS 통계 API(시·도별 `prfstsArea`, 장르별 `prfstsCate`, 일별 `prfst
 
 ## GET /meetups/{meetup_id}/participants
 
-참여자 목록 (nickname, age_group 포함).
+참여자 목록 (`nickname`, `age_group`, `gender` 포함).

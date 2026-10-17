@@ -32,16 +32,23 @@
   }
 
   function whoLine(card) {
+    const details = card.who.member_details || [];
+    if (details.length) {
+      return details.map((d) => escapeHtml(window.Gachi.fmtPerson ? window.Gachi.fmtPerson(d) : d.nickname)).join(", ");
+    }
     const members = card.who.members.map((n) => escapeHtml(n));
     return members.length ? members.join(", ") : "아직 없음";
   }
 
   function cardHtml(card, compact = false) {
     const s = typeStyle(card.activity.type);
+    const gBadge = card.gender_filter ? `<span class="pill warn">${escapeHtml(card.gender_filter === "여" ? "여성만" : card.gender_filter === "남" ? "남성만" : card.gender_filter)}</span>` : "";
+    const aBadge = card.age_filter ? `<span class="pill warn">${escapeHtml(card.age_filter)}만</span>` : "";
     return `
       <div class="m-card ${compact ? "compact" : ""}" style="--c:${s.color}">
         <div class="m-top">
           <span class="type-tag">${s.emoji} ${escapeHtml(card.activity.type)}</span>
+          ${gBadge}${aBadge}
           <span class="muted">${escapeHtml(card.activity.title)}</span>
         </div>
         <h3>${escapeHtml(card.name)}</h3>
@@ -192,8 +199,10 @@
       host_id: user.user_id,
       name: fd.get("name"),
       place_name: fd.get("place_name"),
-      capacity: Number(fd.get("capacity") || 6),
+      capacity: Number(fd.get("capacity") || 4),
       how: fd.get("how") || null,
+      gender_filter: fd.get("gender_filter") || null,
+      age_filter: fd.get("age_filter") || null,
       lat: picked.lat,
       lng: picked.lng,
       meet_at: fd.get("meet_at"),

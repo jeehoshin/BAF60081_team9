@@ -62,13 +62,19 @@ python -m unittest discover tests -v
 - TourAPI: `https://apis.data.go.kr/B551011/KorService2/searchFestival2`. 지역 필터는 `areaCode`가 아니라 `lDongRegnCd`(서울 11 / 대전 30). 분류는 `lclsSystm2`(EV01 축제, EV02 공연, EV03 행사). 키는 공공데이터포털 Decoding 키. 개발계정은 하루 1,000건.
 - 같은 행사는 `external_id`(`KOPIS:…`, `TOUR:…`)로 알아보고 고쳐 쓴다. 끝난 행사는 지우지 않는다 (모임이 걸려 있을 수 있다).
 
-## 진행 상황 (2026-10-11 기준)
+## 진행 상황 (2026-10-17 기준)
 
-- [ ] `feat/public-api-collect` 브랜치(공공 API 수집)를 GitHub에 올리고 PR 만들기. 찬휘 계정이 저장소 협업자 초대를 수락해야 push할 수 있다.
-- [ ] Render 환경변수에 `KOPIS_API_KEY`, `TOUR_API_KEY`, `COLLECT_TOKEN`을 넣고 Swagger `POST /collect`를 `dry_run=true`로 실행하기. 로컬에서는 찬휘 키로 `--dry-run`이 됐다 (2026-10-11, 112건: KOPIS 75 + 한국관광공사 37). Render에서는 아직 안 해 봤다.
+- [x] `feat/public-api-collect` 브랜치(공공 API 수집)를 GitHub에 올리고 PR #1 merge 완료.
+- [x] Render 환경변수에 `KOPIS_API_KEY`, `TOUR_API_KEY`, `COLLECT_TOKEN`을 넣고 실제 수집 실행 완료.
 - [x] `seed.py`에서 지어낸 공연·축제·전시 3건(넙죽이 팬아트 전시, 대전 재즈 나잇, 캠퍼스 번개 버스킹)과 딸린 모임을 뺐다. 시드에는 사용자가 올린 형태의 러닝 2건만 남는다.
-- [ ] 이미 시드가 들어간 Supabase DB에는 위 3건이 남아 있을 수 있다. `seed.py`를 고쳐도 기존 행은 지워지지 않으니 확인하고 정리하기.
-- [ ] 기획안과 코드가 다른 점(`docs/PLANNING.md` 맨 위 표)을 어느 쪽으로 맞출지 팀에서 정하기.
+- [ ] 이미 시드가 들어간 Supabase DB에는 위 3건과 테스트 행이 남아 있을 수 있다. `docs/cleanup_test_data.sql`을 Supabase SQL Editor에서 실행해 정리하기.
+- [x] 기획안(`docs/PLANNING.md` v0.2) 기준 화면·모임 규칙 반영 및 사용성 개선 (지호, 2026-10-17):
+  - 라이브 보드(`live.html`, `GET /live`): 참여·메시지·열린 모임 클릭 시 모임톡(`talk.html`) 및 활동 상세(`activity.html`) 이동 연결.
+  - 호스트 모임 수정(`PATCH /meetups/{id}`, `activity.html`, `talk.js`): 모임장이 모임 이름·집결 시간·장소·정원(4~20명)·조건을 수정하는 기능 추가.
+  - 합류 화면(`register.html`): 연령대(`20대`~`50대 이상`)·성별(`남`/`여`/`선택 안 함`) 정비, 만 19세 이상 필수 체크 및 개인정보 안내 문구 반영.
+  - 모임 조건·참여자 표시(`meetups.py`, `activity.html`, `talk.js`, `map.js`): 조건 미충족/미입력 모임 회색 카드+사유 표시, 참여자 `"닉네임 · 30대(여)"` 형식 표시, 정원 4~20명 검증.
+  - 러닝 활동 등록(`create.html`, `activities.py`): 사용자 직접 등록 유형을 `러닝`으로 고정하고 첫 모임 동시 개설 옵션 추가.
+  - 탐색 날짜 필터·KOPIS 안내(`index.html`, `home.js`, `activity.html`): `오늘 / 이번 주말 / 다음 주` 빠른 필터, 2주 내 종료 `마감 임박` 배지, KOPIS 상세 집계 안내 문구 추가.
 - [x] 한국문화정보원 전시 API(`CULTURE_API_KEY`)를 수집기에 연결했다 (`collectors/culture.py`, 출처 `culture`, 영선, 2026-10-11). 전시는 장기 행사가 많아 `max_span_days` 기본값(90)이면 상당수가 빠진다.
 - [x] Render 환경변수에 `CULTURE_API_KEY` 넣기 (10/11 첫 수집에서 한국문화정보원 41건 적재 확인).
 - [x] KOPIS 공연 통계 수집(`collectors/kopis_stats.py`, `POST /collect/kopis-stats`, 테이블 `kopis_stats`)과 분석 API `GET /stats/kopis`, 분석 화면 지표 A·B·C를 추가했다 (영선, 2026-10-11). 배포 후 Swagger에서 한 번 실행해야 화면에 나온다.

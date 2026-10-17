@@ -1,14 +1,25 @@
 (function () {
-  const { api, UserStore, escapeHtml, fmtDate, fmtTime, typeStyle } = window.Gachi;
+  const { api, UserStore, escapeHtml, fmtDate, fmtTime, fmtPerson, typeStyle, setStatus } = window.Gachi;
   const user = UserStore.get();
   const params = new URLSearchParams(location.search);
   let activeId = params.get("meetup") ? Number(params.get("meetup")) : null;
   let pollTimer = null;
   let lastMsgSig = "";
   let miniMap = null;
+  let currentCard = null;
 
   const roomsEl = document.getElementById("rooms");
   const roomEl = document.getElementById("room");
+  const editDlg = document.getElementById("editRoomDlg");
+  const editForm = document.getElementById("editRoomForm");
+
+  function toDatetimeLocalValue(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso).slice(0, 16);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   function avatar(name) {
     const palette = ["#1f5fd6", "#16a36a", "#e5832f", "#7b4fe0", "#d64f7a", "#0f8fa8"];
@@ -105,24 +116,45 @@
     let card;
     try {
       card = await api(`/meetups/${id}/card`);
+      currentCard = card;
     } catch (e) {
       roomEl.innerHTML = `<p class="status err">${escapeHtml(e.message)}</p>`;
       return;
     }
     const s = typeStyle(card.activity.type);
-    const joined = user && card.who.members.includes(user.nickname);
+    const details = card.who.member_details || [];
+    const joined = user && (
+      details.some((d) => d.user_id === user.user_id) ||
+      card.who.members.includes(user.nickname)
+    );
+    const isHost = user && card.who.host_id === user.user_id;
     const full = card.who.count >= card.who.capacity;
+
+    const peopleHtml = details.length
+      ? details
+          .map((d) => `<span class="pill">${escapeHtml(fmtPerson(d))}${d.user_id === card.who.host_id ? " 👑" : ""}</span>`)
+          .join(" ")
+      : card.who.members
+          .map((n) => `<span class="pill">${escapeHtml(n)}${n === card.who.host ? " 👑" : ""}</span>`)
+          .join(" ");
+
+    const condBadges = [
+      card.gender_filter ? `<span class="pill warn">${escapeHtml(card.gender_filter === "여" ? "여성만" : card.gender_filter === "남" ? "남성만" : card.gender_filter)}</span>` : "",
+      card.age_filter ? `<span class="pill warn">${escapeHtml(card.age_filter)}만</span>` : "",
+    ].filter(Boolean).join(" ");
 
     roomEl.innerHTML = `
       <header class="room-head" style="--c:${s.color}">
         <div class="room-title">
           <span class="type-tag">${s.emoji} ${escapeHtml(card.activity.type)}</span>
           <h2>${escapeHtml(card.name)}</h2>
-          <span class="muted">${escapeHtml(card.activity.title)}</span>
+          <a href="activity.html?id=${card.activity.activity_id}" class="muted">${escapeHtml(card.activity.title)}</a>
+          ${condBadges}
+          ${isHost ? `<button type="button" class="secondary" id="editRoomBtn" style="margin-left:auto;padding:5px 10px;font-size:0.8rem">✏️ 모임 수정</button>` : ""}
         </div>
         <div class="room-info">
           <dl class="w4">
-            <dt>누가</dt><dd>${card.who.members.map((n) => `<span class="pill">${escapeHtml(n)}${n === card.who.host ? " 👑" : ""}</span>`).join(" ")} <span class="muted">${card.who.count}/${card.who.capacity}</span></dd>
+            <dt>누가</dt><dd>${peopleHtml} <span class="muted">${card.who.count}/${card.who.capacity}</span></dd>
             <dt>언제</dt><dd>${fmtDate(card.when)}</dd>
             <dt>어디서</dt><dd>${escapeHtml(card.where.place_name || "장소 미정")}</dd>
             <dt>어떻게</dt><dd>${escapeHtml(card.how || "자유롭게")}</dd>
@@ -150,6 +182,21 @@
                ${full ? "" : `<button type="button" id="joinBtn" class="bun">같이 갈래!</button>`}
              </div>`
       }`;
+
+    const editBtn = document.getElementById("editRoomBtn");
+    if (editBtn && editDlg && editForm) {
+      editBtn.onclick = () => {
+        editForm.elements.name.value = card.name || "";
+        editForm.elements.meet_at.value = toDatetimeLocalValue(card.meet_at || card.when);
+        editForm.elements.capacity.value = card.who.capacity || 4;
+        editForm.elements.place_name.value = card.where.raw_place_name || card.where.place_name || "";
+        editForm.elements.gender_filter.value = card.gender_filter || "";
+        editForm.elements.age_filter.value = card.age_filter || "";
+        editForm.elements.how.value = card.how || "";
+        setStatus(document.getElementById("editRoomStatus"), "", true);
+        editDlg.showModal();
+      };
+    }
 
     if (miniMap) {
       miniMap.remove();
@@ -213,6 +260,36 @@
     await pollMessages();
     pollTimer = setInterval(pollMessages, 2000);
     document.querySelectorAll(".room-item").forEach((a) => a.classList.toggle("on", Number(a.dataset.room) === id));
+  }
+
+  const cancelEditBtn = document.getElementById("cancelEditRoom");
+  if (cancelEditBtn && editDlg) {
+    cancelEditBtn.onclick = () => editDlg.close();
+  }
+  if (editForm && editDlg) {
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!user || !activeId) return;
+      const fd = new FormData(editForm);
+      const payload = {
+        host_id: user.user_id,
+        name: fd.get("name"),
+        capacity: Number(fd.get("capacity") || 4),
+        place_name: fd.get("place_name") || null,
+        how: fd.get("how") || null,
+        gender_filter: fd.get("gender_filter") || null,
+        age_filter: fd.get("age_filter") || null,
+        meet_at: fd.get("meet_at") || null,
+      };
+      try {
+        await api(`/meetups/${activeId}`, { method: "PATCH", body: JSON.stringify(payload) });
+        editDlg.close();
+        await loadRooms();
+        await openRoom(activeId);
+      } catch (err) {
+        setStatus(document.getElementById("editRoomStatus"), err.message, false);
+      }
+    });
   }
 
   roomsEl.addEventListener("click", (e) => {

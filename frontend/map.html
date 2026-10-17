@@ -51,7 +51,25 @@
         <label>집결 장소 이름 <input name="place_name" required placeholder="예: KAIST 정문 시계탑"></label>
         <div class="grid two">
           <label>언제 <input name="meet_at" type="datetime-local" required></label>
-          <label>정원 <input name="capacity" type="number" min="2" value="6"></label>
+          <label>정원 (4~20명) <input name="capacity" type="number" min="4" max="20" value="4"></label>
+        </div>
+        <div class="grid two">
+          <label>성별 조건
+            <select name="gender_filter">
+              <option value="">무관</option>
+              <option value="남">남성만</option>
+              <option value="여">여성만</option>
+            </select>
+          </label>
+          <label>연령대 조건
+            <select name="age_filter">
+              <option value="">무관</option>
+              <option value="20대">20대만</option>
+              <option value="30대">30대만</option>
+              <option value="40대">40대만</option>
+              <option value="50대 이상">50대 이상만</option>
+            </select>
+          </label>
         </div>
         <label>어떻게 <textarea name="how" placeholder="예: 정문 집결 → 도보 10분 → 끝나고 학식"></textarea></label>
         <div class="actions">

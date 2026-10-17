@@ -2,6 +2,60 @@
   function boot() {
     const { api, renderUserBox, setStatus, escapeHtml, fmtPeriod } = window.Gachi;
     renderUserBox();
+    let datePreset = "";
+
+    function toIsoLocal(d, endOfDay = false) {
+      const pad = (n) => String(n).padStart(2, "0");
+      const y = d.getFullYear();
+      const m = pad(d.getMonth() + 1);
+      const day = pad(d.getDate());
+      return `${y}-${m}-${day}T${endOfDay ? "23:59:59" : "00:00:00"}`;
+    }
+
+    function calcDateRange(preset) {
+      if (!preset) return null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dow = today.getDay(); // 0=일, 6=토
+      if (preset === "today") {
+        return { from: toIsoLocal(today, false), to: toIsoLocal(today, true) };
+      }
+      if (preset === "weekend") {
+        const sat = new Date(today);
+        const sun = new Date(today);
+        if (dow === 0) {
+          // 일요일이면 오늘 하루가 이번 주말의 남은 날
+          sat.setDate(today.getDate() - 1);
+        } else {
+          sat.setDate(today.getDate() + (6 - dow));
+          sun.setDate(sat.getDate() + 1);
+        }
+        return { from: toIsoLocal(sat, false), to: toIsoLocal(sun, true) };
+      }
+      if (preset === "nextweek") {
+        const daysUntilNextMon = dow === 0 ? 1 : 8 - dow;
+        const mon = new Date(today);
+        mon.setDate(today.getDate() + daysUntilNextMon);
+        const sun = new Date(mon);
+        sun.setDate(mon.getDate() + 6);
+        return { from: toIsoLocal(mon, false), to: toIsoLocal(sun, true) };
+      }
+      return null;
+    }
+
+    function isClosingSoon(endsAt) {
+      if (!endsAt) return false;
+      const e = new Date(endsAt);
+      if (Number.isNaN(e.getTime())) return false;
+      const now = new Date();
+      const diffDays = (e.getTime() - now.getTime()) / (1000 * 3600 * 24);
+      return diffDays >= 0 && diffDays <= 14;
+    }
+
+    function fmtSource(src) {
+      if (src === "user") return "사용자 등록";
+      return src || "";
+    }
 
     async function load() {
       const region = document.getElementById("region").value;
@@ -9,6 +63,11 @@
       const qs = new URLSearchParams();
       if (region) qs.set("region", region);
       if (type) qs.set("type", type);
+      const range = calcDateRange(datePreset);
+      if (range) {
+        qs.set("date_from", range.from);
+        qs.set("date_to", range.to);
+      }
       const status = document.getElementById("listStatus");
       const list = document.getElementById("list");
       try {
@@ -19,8 +78,11 @@
             .map(
               (a) => `
           <article class="card">
-            <div><span class="pill">${escapeHtml(a.activity_type)}</span>
-              <span class="pill warn">${escapeHtml(a.source)}</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span class="pill">${escapeHtml(a.activity_type)}</span>
+              <span class="pill warn">${escapeHtml(fmtSource(a.source))}</span>
+              ${isClosingSoon(a.ends_at) ? `<span class="pill danger">마감 임박</span>` : ""}
+            </div>
             <h3>${escapeHtml(a.title)}</h3>
             <div class="meta">
               <span>${escapeHtml(a.region || "지역 미상")}</span>
@@ -43,6 +105,18 @@
     }
 
     document.getElementById("searchBtn").addEventListener("click", load);
+    document.getElementById("region").addEventListener("change", load);
+    document.getElementById("type").addEventListener("change", load);
+    const dateFilter = document.getElementById("dateFilter");
+    if (dateFilter) {
+      dateFilter.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-date]");
+        if (!btn) return;
+        dateFilter.querySelectorAll(".chip-btn").forEach((b) => b.classList.toggle("on", b === btn));
+        datePreset = btn.dataset.date || "";
+        load();
+      });
+    }
     load();
   }
 

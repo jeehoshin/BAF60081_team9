@@ -25,20 +25,73 @@
     <section class="panel">
       <div class="grid form-split">
         <div>
-          <h2>새 활동 올리기</h2>
-          <p class="hint">친구들이 바로 보고 참여할 수 있게, 장소와 시간만 분명하면 충분해요.</p>
+          <h2>새 러닝 활동 올리기</h2>
+          <p class="hint">공연·축제·전시는 공공 API에서 자동으로 수집되며, 이용자는 러닝 활동을 직접 올릴 수 있어요.</p>
           <form id="form" class="grid" style="gap:12px">
             <label>유형
               <select name="activity_type" required>
-                <option>러닝</option><option>공연</option><option>축제</option><option>전시</option>
+                <option value="러닝">🏃 러닝 (이용자 직접 등록)</option>
               </select>
             </label>
-            <label>제목 <input name="title" required placeholder="예: 어은동 저녁 러닝"></label>
-            <label>장소 <input name="place" placeholder="예: KAIST 창의학습관 앞"></label>
-            <label>지역(구) <input name="region" placeholder="유성구"></label>
-            <label>일시 <input name="starts_at" type="datetime-local"></label>
-            <label>비용 <input name="cost" placeholder="무료 / 커피값"></label>
+            <label>제목 * <input name="title" required placeholder="예: 갑천 저녁 러닝 5km"></label>
+            <div class="grid two">
+              <label>장소 <input name="place" placeholder="예: KAIST 정문 시계탑"></label>
+              <label>지역(구)
+                <select name="region">
+                  <option value="유성구">대전 유성구</option>
+                  <option value="서구">대전 서구</option>
+                  <option value="중구">대전 중구</option>
+                  <option value="동구">대전 동구</option>
+                  <option value="대덕구">대전 대덕구</option>
+                  <option value="마포구">서울 마포구</option>
+                  <option value="영등포구">서울 영등포구</option>
+                  <option value="송파구">서울 송파구</option>
+                  <option value="성동구">서울 성동구</option>
+                  <option value="용산구">서울 용산구</option>
+                  <option value="강남구">서울 강남구</option>
+                  <option value="서초구">서울 서초구</option>
+                  <option value="종로구">서울 종로구</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid two">
+              <label>일시 <input name="starts_at" type="datetime-local"></label>
+              <label>비용 <input name="cost" value="무료" placeholder="무료 / 음료 각자"></label>
+            </div>
             <label>한줄 소개 <textarea name="description" placeholder="초보 환영! 끝나고 성심당 경유 가능"></textarea></label>
+
+            <div class="sub-box">
+              <label class="check-row">
+                <input type="checkbox" id="openMeetupNow" checked>
+                <span><strong>첫 모임도 바로 함께 열기</strong> (체크하면 모임톡방이 바로 만들어져요)</span>
+              </label>
+              <div id="meetupExtra" class="grid" style="gap:10px; margin-top:10px">
+                <div class="grid two">
+                  <label>모임 이름 <input name="meetup_name" placeholder="비워두면 '제목 + 같이 뛰어요'"></label>
+                  <label>정원 (4~20명) <input name="capacity" type="number" min="4" max="20" value="4"></label>
+                </div>
+                <div class="grid two">
+                  <label>성별 조건
+                    <select name="gender_filter">
+                      <option value="">무관</option>
+                      <option value="남">남성만</option>
+                      <option value="여">여성만</option>
+                    </select>
+                  </label>
+                  <label>연령대 조건
+                    <select name="age_filter">
+                      <option value="">무관</option>
+                      <option value="20대">20대만</option>
+                      <option value="30대">30대만</option>
+                      <option value="40대">40대만</option>
+                      <option value="50대 이상">50대 이상만</option>
+                    </select>
+                  </label>
+                </div>
+                <label>어떻게 모일까요? <input name="how" placeholder="예: 정문 집결 → 갑천 5km 조깅 → 치맥"></label>
+              </div>
+            </div>
+
             <button type="submit" class="bun">올리고 사람 모으기</button>
           </form>
           <p class="status" id="status"></p>
@@ -58,27 +111,51 @@
   <script>
     const { api, renderUserBox, setStatus, UserStore } = window.Gachi;
     renderUserBox();
+    const openNowChk = document.getElementById("openMeetupNow");
+    const extraBox = document.getElementById("meetupExtra");
     if (!UserStore.get()) {
-      setStatus(document.getElementById("status"), "닉네임 합류 후 올리면 모임 연결이 쉬워요.", true);
+      openNowChk.checked = false;
+      extraBox.style.display = "none";
+      setStatus(document.getElementById("status"), "닉네임 합류 후 올리면 첫 모임도 한 번에 열 수 있어요.", true);
     }
+    openNowChk.addEventListener("change", () => {
+      extraBox.style.display = openNowChk.checked ? "grid" : "none";
+    });
 
     document.getElementById("form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
+      const title = fd.get("title");
+      const starts = fd.get("starts_at");
+      const place = fd.get("place") || null;
       const payload = {
-        activity_type: fd.get("activity_type"),
-        title: fd.get("title"),
-        place: fd.get("place") || null,
+        activity_type: "러닝",
+        title,
+        place,
         region: fd.get("region") || null,
         cost: fd.get("cost") || null,
         description: fd.get("description") || null,
         source: "user",
       };
-      const starts = fd.get("starts_at");
       if (starts) payload.starts_at = starts;
       try {
         const a = await api("/activities", { method: "POST", body: JSON.stringify(payload) });
-        setStatus(document.getElementById("status"), `등록 완료! 이제 같이 갈 사람을 모아요 (#${a.activity_id})`, true);
+        const user = UserStore.get();
+        if (openNowChk.checked && user) {
+          const mPayload = {
+            activity_id: a.activity_id,
+            host_id: user.user_id,
+            name: (fd.get("meetup_name") || "").trim() || `${title} 같이 뛰어요`,
+            capacity: Number(fd.get("capacity") || 4),
+            place_name: place,
+            how: fd.get("how") || null,
+            gender_filter: fd.get("gender_filter") || null,
+            age_filter: fd.get("age_filter") || null,
+          };
+          if (starts) mPayload.meet_at = starts;
+          await api("/meetups", { method: "POST", body: JSON.stringify(mPayload) });
+        }
+        setStatus(document.getElementById("status"), `등록 완료! 상세 화면으로 이동합니다 (#${a.activity_id})`, true);
         setTimeout(() => { location.href = `activity.html?id=${a.activity_id}`; }, 700);
       } catch (err) {
         setStatus(document.getElementById("status"), err.message, false);
