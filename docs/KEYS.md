@@ -43,7 +43,7 @@ Direct 연결(포트 `5432`)도 가능하지만, Render 무료 플랜에서는 p
 |---|-----------------|---------------|-----------|--------|-------------|------|
 | 4 | `TOUR_API_KEY` | 한국관광공사_국문 관광정보 서비스_GW | 한국관광공사 | [공공데이터포털](https://www.data.go.kr) 활용신청 | 축제·공연·행사 | ✅ 발급 (찬휘) · 수집 연결됨 |
 | 5 | `KOPIS_API_KEY` | 공연예술통합전산망(KOPIS) 오픈 API | (재)예술경영지원센터 | [KOPIS](https://www.kopis.or.kr) 오픈API (별도 가입) | 공연 | ✅ 발급 (찬휘) · 수집 연결됨 |
-| 6 | `CULTURE_API_KEY` | 한국문화정보원_한눈에보는문화정보조회서비스 | 한국문화정보원 | [공공데이터포털](https://www.data.go.kr) | 전시 | 선택 · 수집기에 아직 연결 안 함 |
+| 6 | `CULTURE_API_KEY` | 한국문화정보원_한눈에보는문화정보조회서비스 | 한국문화정보원 | [공공데이터포털](https://www.data.go.kr) | 전시 | 수집시 · `POST /collect`의 `culture`로 연결됨 |
 
 > KOPIS·TourAPI 키는 **Render 환경변수**에 넣으면 Swagger `POST /collect`로,
 > **로컬 `.env`**에 넣으면 `scripts/collect_activities.py`로 수집한다. 방법은 **[COLLECT.md](COLLECT.md)**.

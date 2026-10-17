@@ -22,6 +22,9 @@ services:
         sync: false
       - key: TOUR_API_KEY
         sync: false
+      # 한국문화정보원 전시 (공공데이터포털 키)
+      - key: CULTURE_API_KEY
+        sync: false
       - key: COLLECT_TOKEN
         sync: false
       - key: PYTHON_VERSION

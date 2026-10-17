@@ -19,6 +19,15 @@
     .legend .bartrack { display: inline-block; width: 18px; height: 6px; vertical-align: middle; margin-right: 4px; }
     .legend .bartrack i { width: 100%; }
     .legend .bartrack.alt i { opacity: 0.45; }
+    /* 데이터 품질 표 */
+    .qtable-wrap { overflow-x: auto; }
+    .qtable { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .qtable th, .qtable td { padding: 7px 8px; border-bottom: 1px solid rgba(127,127,127,0.2); text-align: right; white-space: nowrap; }
+    .qtable th:first-child, .qtable td:first-child { text-align: left; }
+    .qtable th { color: var(--muted); font-weight: 600; }
+    .barlist.money .barrow { grid-template-columns: 104px 1fr 100px; }
+    .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .compare .stat small { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -70,9 +79,24 @@
       <div class="barlist" id="kopisGenre"></div>
     </section>
     <section class="panel">
+      <h2>인구 10만 명당 · 서울 vs 대전</h2>
+      <p class="hint">"서울은 사람이 많아서 그런 것 아니냐"에 대한 답. KOPIS 집계기간 합계를 시·도 주민등록 인구로 나눴습니다.</p>
+      <div class="compare" id="perCapitaKpi"></div>
+      <h3 style="margin:18px 0 6px;font-size:0.95rem">시·도별 인구 10만 명당 티켓 판매액</h3>
+      <div class="barlist wide money" id="perCapitaArea"></div>
+      <p class="hint" id="popBasis" style="margin-top:12px"></p>
+    </section>
+    <section class="panel">
       <h2>요일별 하루 평균 관객 수</h2>
       <div class="barlist wide" id="kopisWeek"></div>
       <p class="hint" id="kopisNotice" style="margin-top:14px"></p>
+    </section>
+
+    <section class="panel">
+      <h2>데이터 품질 · 수집 자료 점검</h2>
+      <p class="hint">출처별 수집 건수, 빈 칸 비율, 오늘 기준 진행 상태, 출처 간 중복 후보입니다.</p>
+      <div class="qtable-wrap"><table class="qtable" id="qualityTable"></table></div>
+      <p class="hint" id="dupNote" style="margin-top:12px"></p>
     </section>
   </div>
 
@@ -133,8 +157,80 @@
         pairBars(document.getElementById("kopisGenre"), k.by_genre);
         bars(document.getElementById("kopisWeek"), k.by_weekday.map((d) => ({ key: d.key, count: d.avg_audience })), num);
         document.getElementById("kopisNotice").textContent = `${k.notice} ${k.attribution}`;
+        renderPerCapita(k);
       } catch (e) {
         period.textContent = `KOPIS 통계를 불러오지 못했어요: ${e.message}`;
+      }
+    }
+
+    // 원 단위 → "12.3억 원" / "4,560만 원"
+    const won = (v) => {
+      if (v == null) return "-";
+      if (v >= 1e8) return `${(v / 1e8).toFixed(1)}억 원`;
+      if (v >= 1e4) return `${Math.round(v / 1e4).toLocaleString("ko-KR")}만 원`;
+      return `${Math.round(v).toLocaleString("ko-KR")}원`;
+    };
+    const oneDec = (v) => (v == null ? "-" : Number(v).toLocaleString("ko-KR", { maximumFractionDigits: 1 }));
+
+    function renderPerCapita(k) {
+      const h = k.highlights || {};
+      if (h.seoul_amount_per_100k == null && h.daejeon_amount_per_100k == null) return;
+      const ratio = (a, b) => (a && b ? `서울이 대전의 ${(a / b).toFixed(1)}배` : "");
+      document.getElementById("perCapitaKpi").innerHTML = `
+        <div class="stat"><span>티켓 판매액 (10만 명당)</span>
+          <b>서울 ${won(h.seoul_amount_per_100k)}</b>
+          <small>대전 ${won(h.daejeon_amount_per_100k)} · 전국 ${won(h.national_amount_per_100k)}<br>${ratio(h.seoul_amount_per_100k, h.daejeon_amount_per_100k)}</small></div>
+        <div class="stat"><span>상연 횟수 (10만 명당)</span>
+          <b>서울 ${oneDec(h.seoul_performance_per_100k)}회</b>
+          <small>대전 ${oneDec(h.daejeon_performance_per_100k)}회 · 전국 ${oneDec(h.national_performance_per_100k)}회<br>${ratio(h.seoul_performance_per_100k, h.daejeon_performance_per_100k)}</small></div>
+        <div class="stat"><span>관객 수 (10만 명당)</span>
+          <b>서울 ${oneDec(h.seoul_audience_per_100k)}명</b>
+          <small>대전 ${oneDec(h.daejeon_audience_per_100k)}명<br>${ratio(h.seoul_audience_per_100k, h.daejeon_audience_per_100k)}</small></div>
+      `;
+      const ranked = k.by_area.filter((a) => a.amount_per_100k != null)
+        .sort((a, b) => b.amount_per_100k - a.amount_per_100k);
+      const top = ranked.slice(0, 10);
+      const dj = ranked.find((a) => a.key === "대전");
+      if (dj && !top.includes(dj)) top.push(dj);
+      bars(document.getElementById("perCapitaArea"), top.map((a) => ({ key: a.key, count: a.amount_per_100k })), won);
+      const b = k.population_basis;
+      if (b) {
+        const [y, m] = String(b.month).split("-");
+        document.getElementById("popBasis").textContent =
+          `인구: ${b.source} ${y}년 ${Number(m)}월 말 기준 (${b.url}). ${b.note}.`;
+      }
+    }
+
+    const STATUS_LABEL = { ongoing: "진행 중", upcoming: "예정", ended: "종료", unknown: "날짜 없음" };
+
+    async function loadQuality() {
+      const table = document.getElementById("qualityTable");
+      const note = document.getElementById("dupNote");
+      try {
+        const q = await api("/stats/quality");
+        const row = (name, s, strong = false) => `
+          <tr${strong ? ' style="font-weight:700"' : ""}>
+            <td>${escapeHtml(name)}</td>
+            <td>${s.count}</td>
+            <td>${s.image_missing_pct}%</td>
+            <td>${s.coord_missing_pct}%</td>
+            <td>${s.status_pct.ongoing}%</td>
+            <td>${s.status_pct.upcoming}%</td>
+            <td>${s.status_pct.ended}%</td>
+          </tr>`;
+        table.innerHTML = `
+          <thead><tr><th>출처</th><th>건수</th><th>이미지 없음</th><th>좌표 없음</th>
+            <th>${STATUS_LABEL.ongoing}</th><th>${STATUS_LABEL.upcoming}</th><th>${STATUS_LABEL.ended}</th></tr></thead>
+          <tbody>${q.by_source.map((s) => row(s.source, s)).join("")}${row("전체", q.total, true)}</tbody>`;
+        const d = q.cross_source_duplicates;
+        const examples = d.pairs.slice(0, 3)
+          .map((p) => `「${p.a.title}」(${p.a.source}) ↔ 「${p.b.title}」(${p.b.source})`).join(", ");
+        note.textContent =
+          `출처 간 중복 후보: 공공 API 자료 ${d.public_total}건 중 ${d.count}건 (${d.pct_of_public}%). 기준: ${d.rule}.`
+          + (examples ? ` 예: ${examples}` : "")
+          + (q.notes && q.notes.length ? ` ※ ${q.notes.join(" ")}` : "");
+      } catch (e) {
+        note.textContent = `데이터 품질을 불러오지 못했어요: ${e.message}`;
       }
     }
 
@@ -162,6 +258,7 @@
     }
     load();
     loadKopis();
+    loadQuality();
     setInterval(() => { if (!document.hidden) load(); }, 15000);
   </script>
 </body>

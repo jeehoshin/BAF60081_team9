@@ -9,11 +9,12 @@
 | 프론트 | HTML/CSS/JS | **Vercel** |
 | 백엔드 | FastAPI | **Render** |
 | DB | PostgreSQL | **Supabase** |
-| 수집 | KOPIS · 한국관광공사 TourAPI | Swagger `POST /collect` 또는 로컬 스크립트 |
+| 수집 | KOPIS(공연·공연 통계) · 한국관광공사 TourAPI(축제·행사) · 한국문화정보원(전시) | Swagger `POST /collect`, `POST /collect/kopis-stats` 또는 로컬 스크립트 |
 
 ```
 이용자(QR) → Vercel → Render(FastAPI) → Supabase
-KOPIS·TourAPI → POST /collect (또는 scripts/collect_activities.py) → Supabase activities
+KOPIS·TourAPI·한국문화정보원 → POST /collect (또는 scripts/collect_activities.py) → Supabase activities
+KOPIS 통계(시·도·장르·일별) → POST /collect/kopis-stats (또는 scripts/collect_kopis_stats.py) → Supabase kopis_stats
 ```
 
 ## 저장소 구조
@@ -37,13 +38,31 @@ docs/        키 체크리스트 · 수집 · 배포 · API · DB
 | 수집시 | `TOUR_API_KEY` | 한국관광공사 TourAPI (Decoding 키) |
 | 수집시 | `KOPIS_API_KEY` | KOPIS 공연 |
 | 수집시 | `COLLECT_TOKEN` | Swagger `POST /collect` 실행용 비밀 문자열 |
-| 선택 | `CULTURE_API_KEY` | 한국문화정보원 전시 (아직 수집기 미연결) |
+| 수집시 | `CULTURE_API_KEY` | 한국문화정보원 전시 (공공데이터포털 키, TourAPI와 같은 키여도 됨) |
 
 ## 공공 API 수집
 
-KOPIS(공연)와 한국관광공사 TourAPI(축제·공연·행사)에서 **서울·대전** 행사를 받아 `activities`에 넣는다.
-Render에 `KOPIS_API_KEY`·`TOUR_API_KEY`·`COLLECT_TOKEN`을 넣고 Swagger에서 **POST /collect** (처음엔 `dry_run=true`).
-다시 실행해도 같은 행사가 두 번 생기지 않는다. 자세한 방법·오류 대처·출처 표시: **[docs/COLLECT.md](docs/COLLECT.md)**
+공공 API 세 곳에서 **서울·대전** 행사를 받아 `activities`에 넣고, KOPIS 통계는 따로 `kopis_stats`에 쌓는다.
+
+| 출처 | 받는 것 | 저장 위치 | 실행 |
+|------|---------|-----------|------|
+| KOPIS 공연예술통합전산망 | 공연 목록·상세·공연장 위치 | `activities` (`source`=KOPIS) | `POST /collect` |
+| 한국관광공사 TourAPI | 축제·공연·행사 | `activities` (`source`=한국관광공사) | `POST /collect` |
+| 한국문화정보원 한눈에보는문화정보 | 전시 | `activities` (`source`=한국문화정보원) | `POST /collect` |
+| KOPIS 공연 통계 (전국) | 시·도별·장르별·일별 판매액·상연 횟수·관객 수 | `kopis_stats` | `POST /collect/kopis-stats` |
+
+- Render에 `KOPIS_API_KEY`·`TOUR_API_KEY`·`CULTURE_API_KEY`·`COLLECT_TOKEN`을 넣고 Swagger에서 실행한다 (처음엔 `dry_run=true`).
+- 다시 실행해도 같은 행사가 두 번 생기지 않는다 (`external_id`로 알아보고 고쳐 씀).
+- 자세한 방법·오류 대처·출처 표시: **[docs/COLLECT.md](docs/COLLECT.md)**
+
+### 분석 페이지 (`stats.html`)에서 보여 주는 것
+
+| 지표 | API | 설명 |
+|------|-----|------|
+| 수집 활동·모임·이용자 현황 | `GET /stats/activities`, `/stats/meetups`, `/stats/users` | 지역·유형별 활동 수, 모임 충원율, 연령대 분포 |
+| 공연 시장 (KOPIS 통계) | `GET /stats/kopis` | 시·도별 판매액 비중, 장르별 상연 횟수·판매액, 요일별 관객 |
+| 인구 10만 명당 서울 vs 대전 | `GET /stats/kopis` | 판매액·상연 횟수·관객 수를 시·도 주민등록 인구(행정안전부, 2026년 9월 말)로 나눔 |
+| 데이터 품질 | `GET /stats/quality` | 출처별 수집 건수, 이미지·좌표 빈 비율, 진행 중·예정·종료 비율, 출처 간 중복 후보 |
 
 ## 시연 화면
 
@@ -55,7 +74,7 @@ Render에 `KOPIS_API_KEY`·`TOUR_API_KEY`·`COLLECT_TOKEN`을 넣고 Swagger에�
 | `talk.html` | 모임톡 (버블 채팅) |
 | `activity.html` | 활동 상세 + 모임 참여 |
 | `live.html` | 발표용 라이브 보드 (등록·참여·메시지 실시간) |
-| `stats.html` | 수집/이용 데이터 분석 |
+| `stats.html` | 수집/이용 데이터 분석 (KOPIS 통계, 인구 10만 명당 비교, 데이터 품질) |
 | `create.html` | 러닝 등 사용자 활동 등록 |
 
 발표 흐름: **프로젝터에 live → 청중 QR 등록 → 모임 참여·메시지 → 통계 변화**.
@@ -104,6 +123,7 @@ npx --yes serve -l 5500
 ## 보안
 
 - `.env` / Render·Vercel 시크릿에만 키 보관. GitHub 커밋 금지 (공공 API 키는 Vercel·`config.js`에도 넣지 않음)
-- 공공 API 자료는 출처 표시 필수: KOPIS·한국관광공사 (설명 끝에 자동으로 붙음)
+- 공공 API 자료는 출처 표시 필수: KOPIS·한국관광공사·한국문화정보원 (설명 끝에 자동으로 붙음). KOPIS 통계는 분석 화면에 집계 기준 안내 문구를 함께 표시
+- 인구 자료 출처: 행정안전부 주민등록 인구통계 (분석 화면에 기준월 표시)
 - QR은 닉네임 권장, 실이용자 개인정보 AI 입력 금지
 - Supabase `service_role` 키는 이 구조에서 프론트에 넣지 않음
