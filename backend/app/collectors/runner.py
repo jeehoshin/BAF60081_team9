@@ -34,6 +34,9 @@ class CollectOptions:
     days: int = 30  # 오늘부터 며칠 뒤까지
     kopis_per_genre: int = 6  # KOPIS 장르(9개)마다 지역별로 몇 건까지
     max_span_days: int = 90  # 이보다 긴 장기·상설 행사는 뺀다 (0이면 제한 없음)
+    # 한국문화정보원 전시만 따로 적용. 전시는 상설·장기 전시도 지금 볼 수 있는 행사라 기본은 제한 없음(0).
+    # 홈 화면이 기간 90일 넘는 행사를 "곧 시작하는 행사" 뒤로 보내므로 새 행사를 가리지 않는다.
+    culture_max_span_days: int = 0
 
     def __post_init__(self) -> None:
         self.sources = parse_choices(self.sources, SOURCES, "sources")
@@ -44,6 +47,8 @@ class CollectOptions:
             raise ValueError("kopis_per_genre는 1~30 사이여야 해요.")
         if self.max_span_days < 0:
             raise ValueError("max_span_days는 0 이상이어야 해요.")
+        if self.culture_max_span_days < 0:
+            raise ValueError("culture_max_span_days는 0 이상이어야 해요.")
 
 
 def parse_choices(raw, allowed, label: str) -> tuple[str, ...]:
@@ -92,7 +97,7 @@ async def gather_rows(
                     elif source == "culture":
                         rows += await culture.fetch_area(
                             client, keys[source], area, window_from, window_to, report,
-                            max_span_days=opts.max_span_days,
+                            max_span_days=opts.culture_max_span_days,
                         )
                     else:
                         rows += await tourapi.fetch_area(

@@ -42,6 +42,7 @@ ATTRIBUTION = "출처: 한국문화정보원 한눈에보는문화정보"
 REALM_EXHIBITION = "D000"
 PAGE_SIZE = 100
 MAX_PAGES = 10  # 지역당 최대 1,000건까지 넘겨 본다
+LONG_RUN_DAYS = 90  # 이보다 긴 전시는 설명에 "상설·장기 전시"를 붙인다 (홈 화면은 목록 뒤쪽에 둔다)
 
 _ERROR_HINTS = {
     "SERVICE_KEY_IS_NOT_REGISTERED_ERROR": "인증키가 등록되지 않았어요. 활용신청 승인 직후라면 1~2시간 뒤에 다시 해 보고, 공공데이터포털의 'Decoding' 키를 넣었는지 확인하세요.",
@@ -119,6 +120,7 @@ def to_row(item: dict, area: str, window_from: date, window_to: date, max_span_d
 
     period = start.strftime("%Y.%m.%d") + ("" if end == start else " ~ " + end.strftime("%Y.%m.%d"))
     realm = (item.get("realmName") or "").strip() or "전시"
+    long_run = "상설·장기 전시" if (end - start).days + 1 > LONG_RUN_DAYS else None
     return {
         "external_id": f"CULTURE:{seq}",
         "activity_type": "전시",
@@ -128,7 +130,7 @@ def to_row(item: dict, area: str, window_from: date, window_to: date, max_span_d
         "starts_at": start_of(start),
         "ends_at": end_of(end),
         "cost": None,
-        "description": join_parts(realm, f"기간 {period}", ATTRIBUTION),
+        "description": join_parts(realm, long_run, f"기간 {period}", ATTRIBUTION),
         "source": SOURCE,
         "lat": to_float(item.get("gpsY")),
         "lng": to_float(item.get("gpsX")),
