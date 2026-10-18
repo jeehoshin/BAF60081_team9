@@ -57,6 +57,26 @@
       return "";
     }
 
+    // 상설·장기 행사(기간 90일 초과)는 '상설'로 구분하고, 진행 중이어도 "곧 시작하는 행사" 뒤로 보낸다.
+    // 서버는 진행 중인 행사를 모두 앞에 두기 때문에, 이렇게 하지 않으면 상설 전시가 이번 주말에 새로 시작하는 행사를 가린다.
+    // 끝난 행사는 서버 순서대로 맨 뒤에 둔다.
+    const LONG_RUN_DAYS = 90;
+    function isLongRun(a) {
+      if (!a.starts_at || !a.ends_at) return false;
+      const s = new Date(a.starts_at);
+      const e = new Date(a.ends_at);
+      if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return false;
+      return (e.getTime() - s.getTime()) / 86400000 > LONG_RUN_DAYS;
+    }
+    function isOver(a) {
+      return dateBadge(a).includes("종료");
+    }
+    function longRunLast(rows) {
+      const over = rows.filter(isOver);
+      const live = rows.filter((a) => !isOver(a));
+      return [...live.filter((a) => !isLongRun(a)), ...live.filter(isLongRun), ...over];
+    }
+
     function fmtSource(src) {
       if (src === "user") return "사용자 등록";
       return src || "";
@@ -80,7 +100,7 @@
       const status = document.getElementById("listStatus");
       const list = document.getElementById("list");
       try {
-        const rows = await api(`/activities?${qs}`);
+        const rows = longRunLast(await api(`/activities?${qs}`));
         setStatus(status, `${rows.length}개 활동`, true);
         list.innerHTML =
           rows
@@ -92,6 +112,7 @@
             <div style="display:flex;flex-wrap:wrap;gap:6px">
               <span class="pill">${escapeHtml(a.activity_type)}</span>
               <span class="pill warn">${escapeHtml(fmtSource(a.source))}</span>
+              ${isLongRun(a) ? `<span class="pill">상설</span>` : ""}
               ${badge}
             </div>
             <h3>${escapeHtml(a.title)}</h3>

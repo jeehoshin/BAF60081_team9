@@ -337,7 +337,7 @@
         <span class="pill">공공 API 3종 + 인구 · Render · Supabase · Vercel</span>
       </div>
       <div class="takeaway"><span class="tag">핵심 한 줄</span>
-        <div>외부 데이터 4곳 → FastAPI 수집기가 <b>정제·중복 제거</b> → PostgreSQL 8개 테이블 → 정적 웹 10개 화면. 전부 무료 티어 클라우드.</div>
+        <div>외부 데이터 4곳 → FastAPI 수집기가 <b>정제·중복 탐지</b> → PostgreSQL 8개 테이블 → 정적 웹 10개 화면. 전부 무료 티어 클라우드.</div>
       </div>
 
       <div class="arch-flow">
@@ -356,7 +356,7 @@
           <h4>② FastAPI 서버 · 수집기</h4>
           <ul>
             <li>비동기 병렬 수집, KOPIS 초당 4건 제한</li>
-            <li>주소 → <code>'OO구'</code>, 90일 초과 상설 행사 제외</li>
+            <li>주소 → <code>'OO구'</code>, 90일 초과 공연·축제 제외 · 상설 전시는 <b>'상설'로 구분</b>해 새 행사 뒤에</li>
             <li>참여 시 행 잠금(<code>FOR UPDATE</code>)으로 정원 보장</li>
             <li>통계·품질·중복·수집 기록 API</li>
           </ul>
@@ -483,7 +483,7 @@
           <div class="ep"><span class="m-badge m-post">POST</span><div><code>/collect</code><span>공공 API 3종 수집. <code>x-collect-token</code>, <code>dry_run</code></span></div></div>
           <div class="ep"><span class="m-badge m-post">POST</span><div><code>/collect/kopis-stats</code><span>KOPIS 전국 통계 3개월</span></div></div>
           <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/kopis</code><span>지표 A·B·C + 인구 10만 명당</span></div></div>
-          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/regions</code><span>구별 인구 10만 명당 활동 수 (지표 G)</span></div></div>
+          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/regions</code><span>구별 인구 10만 명당 활동 수 · 도시 안 분포 (지표 G)</span></div></div>
           <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/quality</code> · <code>/stats/collect-runs</code><span>결측·중복·수집 기록 (지표 H)</span></div></div>
           <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/users · /stats/meetups</code><span><code>since</code>로 "오늘 QR 참여자만"</span></div></div>
         </div>
@@ -507,7 +507,7 @@
               <tr><td><span class="m-badge m-get">GET</span></td><td><code>/map</code> · <code>/live</code></td><td>지도 핀 / 라이브 보드</td><td><code>region?</code>, <code>type?</code>, <code>limit?</code></td><td><code>200</code> 4하 카드 배열 / 카운트·최근 이벤트</td></tr>
               <tr><td><span class="m-badge m-get">GET</span></td><td><code>/stats/activities · /stats/meetups · /stats/users</code></td><td>현황 집계</td><td>meetups·users: <code>since?</code></td><td><code>200</code> 지역·유형별 수, 충원율, 연령대·성별</td></tr>
               <tr><td><span class="m-badge m-get">GET</span></td><td><code>/stats/kopis</code></td><td>KOPIS 전국 통계 + 인구 10만 명당</td><td>—</td><td><code>200</code> by_area · by_genre · by_weekday · highlights · population_basis</td></tr>
-              <tr><td><span class="m-badge m-get">GET</span></td><td><code>/stats/regions</code></td><td>구별 인구 10만 명당 활동 수</td><td><code>include_ended?</code></td><td><code>200</code> cities[].districts[] · highlights</td></tr>
+              <tr><td><span class="m-badge m-get">GET</span></td><td><code>/stats/regions</code></td><td>구별 인구 10만 명당 활동 수 (도시 안 구별 분포용)</td><td><code>include_ended?</code></td><td><code>200</code> cities[].districts[] · highlights</td></tr>
               <tr><td><span class="m-badge m-get">GET</span></td><td><code>/stats/quality</code> · <code>/stats/collect-runs</code></td><td>데이터 품질 · 수집 기록</td><td><code>limit?</code></td><td><code>200</code> 출처별 결측률·진행 상태·중복 후보·최근 수집</td></tr>
               <tr><td><span class="m-badge m-post">POST</span></td><td><code>/collect</code> · <code>/collect/kopis-stats</code></td><td>공공 API 수집</td><td>Header <code>x-collect-token</code>, <code>sources</code>, <code>areas</code>, <code>days</code>, <code>dry_run</code></td><td><code>200 {collected, inserted, updated, results[], run_id}</code> · 토큰 401</td></tr>
             </tbody>
@@ -530,7 +530,7 @@
         <div class="stat"><span>수집한 활동</span><b id="pkAct">-</b></div>
         <div class="stat"><span>서울 티켓 판매액 비중</span><b id="pkSeoulShare">-</b></div>
         <div class="stat"><span>10만 명당 판매액 · 서울/대전</span><b id="pkPerCapita">-</b></div>
-        <div class="stat"><span>10만 명당 활동 수 · 서울/대전</span><b id="pkRegion">-</b></div>
+        <div class="stat"><span>10만 명당 상연 횟수 · 서울/대전</span><b id="pkPerfCapita">-</b></div>
         <div class="stat"><span>주말(토·일) 관객 비중</span><b id="pkWeekend">-</b></div>
       </div>
 
@@ -540,7 +540,7 @@
         <div class="s"><small>그래서</small>대전 같은 비수도권은 예매처 하나로는 정보를 찾기 어렵다 → <b>공공 API 3종 통합 탐색</b>이 필요하다.</div>
       </div>
       <div class="hyp">
-        <div class="q"><small>가설 2</small><b>인구를 보정해도 서울·대전 격차는 남는다</b><span class="ind">지표 G · 행안부 인구 10만 명당 (시·도 + 구별)</span></div>
+        <div class="q"><small>가설 2</small><b>인구를 보정해도 서울·대전 격차는 남는다</b><span class="ind">KOPIS 시·도별 통계 ÷ 행안부 시·도 인구</span></div>
         <div class="r" id="hyp2Result"><div class="big">불러오는 중…</div></div>
         <div class="s"><small>그래서</small>"서울은 사람이 많아서"라는 반론에 답했다. 공급이 적은 대전에서는 <b>축제·전시 + 사용자가 직접 여는 활동(러닝)</b>이 중요하다.</div>
       </div>
@@ -594,7 +594,7 @@
         <span class="pill">문제 → 해결</span>
       </div>
       <div class="takeaway"><span class="tag">핵심 한 줄</span>
-        <div>공공 API는 <b>기관마다 다 다르고, 빨리 부르면 막히고, 서버 시간은 UTC</b>였다. 셋 다 테스트(70개)로 다시는 깨지지 않게 묶었다.</div>
+        <div>공공 API는 <b>기관마다 다 다르고, 빨리 부르면 막히고, 서버 시간은 UTC</b>였다. 셋 다 테스트(71개)로 다시는 깨지지 않게 묶었다. 분석 숫자도 <b>수집 방식이 만든 착시인지</b> 따져 봤다.</div>
       </div>
 
       <div class="ts">
@@ -612,6 +612,10 @@
       <div class="ts">
         <div class="p"><small>문제</small><b class="t">④ 무료 서버는 잠든다</b>Render 무료 플랜은 15분 쉬면 첫 응답이 30~60초.</div>
         <div class="f"><small>해결</small><b class="t">세 겹 대비</b>GitHub Actions가 낮 시간 10분마다 <code>/health</code> 호출, 발표 전 체크리스트, 늦으면 화면에 "서버 깨우는 중" 안내.</div>
+      </div>
+      <div class="ts">
+        <div class="p"><small>문제</small><b class="t">⑤ 인구로 나눴더니 대전이 더 많다?</b>수집한 활동 수를 인구 10만 명당으로 나누자 서울 1.3 vs 대전 2.9. "인구 보정 후에도 서울 격차가 남는다"는 가설과 정반대.</div>
+        <div class="f"><small>해결</small><b class="t">원인은 수집 상한 → 도시 비교는 KOPIS 전수 통계로</b>공연을 장르마다 도시별 6건까지만 받아 두 도시 수집량이 비슷하게 맞춰져 있었음(KOPIS 기준 실제 상연 횟수는 서울이 대전의 약 30배). 수집 활동 수는 도시 안 구별 분포에만 쓰고, 서울·대전 비교는 KOPIS 시·도 통계 ÷ 인구로 바꿈.</div>
       </div>
 
       <h3 class="sub-h"><span class="n">🚀</span> 향후 계획</h3>
@@ -710,10 +714,9 @@
       const fail = (id, what) => setR(id, `<span style="color:var(--muted);font-size:1rem">${what} 불러오지 못했어요</span>`,
         "Render 서버가 깨어나는 중일 수 있어요. 잠시 후 새로고침.");
 
-      const [kopis, quality, regions] = await Promise.all([
+      const [kopis, quality] = await Promise.all([
         api("/stats/kopis").catch(() => null),
         api("/stats/quality").catch(() => null),
-        api("/stats/regions").catch(() => null),
       ]);
 
       // 가설 5 · KPI 활동 수
@@ -731,16 +734,6 @@
           { ok: true, text: dup.count <= 3 ? "거의 안 겹침 → 세 출처가 서로 보완" : "중복 후보 있음 → 사람이 확인" });
       } else fail("hyp5Result", "품질 지표를");
 
-      // 가설 2 보조 · 구별 인구 10만 명당 활동 수 (KOPIS 통계가 없어도 나온다)
-      let regLine = "";
-      if (regions && regions.highlights) {
-        const g = regions.highlights;
-        document.getElementById("pkRegion").textContent = g.seoul_vs_daejeon_ratio ? `${g.seoul_vs_daejeon_ratio}배` : "-";
-        const byCity = Object.fromEntries((regions.cities || []).map((c) => [c.city, c]));
-        regLine = `<br>수집 활동 수(구별): 10만 명당 서울 ${oneDec(g.seoul_per_100k)} vs 대전 ${oneDec(g.daejeon_per_100k)}`
-          + (byCity["대전"] && byCity["대전"].top_district ? ` · 대전은 ${escapeHtml(byCity["대전"].top_district)}에 ${byCity["대전"].top3_share}%` : "");
-      }
-
       // 가설 1~4 · KOPIS
       if (kopis && kopis.available) {
         const h = kopis.highlights || {};
@@ -757,10 +750,14 @@
 
         const perfRatio = h.seoul_performance_per_100k && h.daejeon_performance_per_100k
           ? (h.seoul_performance_per_100k / h.daejeon_performance_per_100k).toFixed(1) : null;
+        document.getElementById("pkPerfCapita").textContent = perfRatio ? `${perfRatio}배` : "-";
+        // 판정은 숫자로 정한다: 판매액·상연 횟수 둘 다 서울이 1.5배 이상이면 '격차 유지'
+        const gapKept = Number(ratioAmt) >= 1.5 && Number(perfRatio) >= 1.5;
         setR("hyp2Result",
           `10만 명당 판매액 서울이 대전의 <em>${ratioAmt ?? "-"}배</em>`,
-          `서울 ${won(h.seoul_amount_per_100k)} vs 대전 ${won(h.daejeon_amount_per_100k)} · 상연 횟수 ${perfRatio ?? "-"}배 (${oneDec(h.seoul_performance_per_100k)}회 vs ${oneDec(h.daejeon_performance_per_100k)}회)${regLine}`,
-          { ok: true, text: "인구 보정 후에도 격차 유지" });
+          `서울 ${won(h.seoul_amount_per_100k)} vs 대전 ${won(h.daejeon_amount_per_100k)} · 상연 횟수 ${perfRatio ?? "-"}배 (${oneDec(h.seoul_performance_per_100k)}회 vs ${oneDec(h.daejeon_performance_per_100k)}회)`
+          + `<br>※ 우리가 수집한 행사 수는 공연을 장르마다 지역별 6건까지만 받아 두 도시 양이 비슷하게 맞춰져 있어서, 도시 비교에는 쓰지 않고 KOPIS 전국 통계로 비교했어요.`,
+          ratioAmt && perfRatio ? { ok: gapKept, text: gapKept ? "인구 보정 후에도 격차 유지" : "인구 보정하면 격차가 작음" } : null);
 
         const wk = (kopis.by_weekday || []);
         const top = [...wk].sort((a, b) => b.avg_audience - a.avg_audience)[0];

@@ -82,7 +82,7 @@ class CultureTests(unittest.TestCase):
 
     def test_rows_and_filters(self):
         calls = []
-        rows, reports, wf, wt = self.gather(calls)
+        rows, reports, wf, wt = self.gather(calls, culture_max_span_days=90)
         by_id = {r["external_id"]: r for r in rows}
         self.assertEqual(set(by_id), {"CULTURE:100001", "CULTURE:200001"})
 
@@ -105,9 +105,18 @@ class CultureTests(unittest.TestCase):
         self.assertEqual((params["realmCode"], params["from"], params["to"]), ("D000", "20261011", "20261110"))
         self.assertEqual({c.url.params["sido"] for c in calls}, {"서울", "대전"})
 
-    def test_long_exhibitions_kept_when_unlimited(self):
-        rows, *_ = self.gather([], max_span_days=0)
-        self.assertIn("CULTURE:100002", {r["external_id"] for r in rows})
+    def test_long_exhibitions_kept_by_default(self):
+        # 전시는 기본으로 상설·장기 전시도 받고, 설명에 표시를 붙인다. 다른 출처의 max_span_days(90)와는 따로 간다.
+        rows, *_ = self.gather([])
+        by_id = {r["external_id"]: r for r in rows}
+        self.assertIn("CULTURE:100002", by_id)
+        self.assertIn("상설·장기 전시", by_id["CULTURE:100002"]["description"])
+        self.assertNotIn("상설·장기 전시", by_id["CULTURE:100001"]["description"])  # 25일짜리 전시
+
+    def test_culture_option_validation(self):
+        with self.assertRaises(ValueError):
+            runner.CollectOptions(culture_max_span_days=-1)
+        self.assertEqual(runner.CollectOptions().culture_max_span_days, 0)
 
     def test_pages_until_total(self):
         many = [item(str(300000 + i), f"전시 {i}", "20261010", "20261020") for i in range(150)]
