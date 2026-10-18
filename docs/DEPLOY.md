@@ -84,7 +84,7 @@ window.APP_CONFIG = {
 
 | 순서 | 할 일 | 확인 |
 |---|---|---|
-| 1 | Supabase에 `docs/cleanup_test_data.sql` 실행 (지어낸 행사·테스트 이용자 정리) | `stats.html` 데이터 품질 표에 `API` 출처가 없음 |
+| 1 | Supabase에 `docs/cleanup_test_data.sql` 실행 (사람이 만든 데이터 전부 + 지어낸 행사 정리, 공공 API 행사는 남김). 실행 뒤 팀원 휴대폰·발표 노트북은 **로그아웃 후 새로 합류** | `stats.html` 데이터 품질 표에 `API`·`user` 출처가 없음, 라이브 보드 이용자 0 |
 | 2 | Swagger `POST /collect` (`days=15`쯤, 11/1까지 들어오게) → 이어서 `POST /collect/kopis-stats` | 응답의 `inserted`/`updated`, `stats.html` "최근 수집 기록"에 줄이 생김 |
 | 3 | `https://baf60081-team9.onrender.com/health` 열기 | `"mode":"database"` |
 | 4 | Vercel 주소에서 `index.html` → 활동 하나 → 모임 참여 → `talk.html` 메시지 1개 | 라이브 보드에 뜸 |

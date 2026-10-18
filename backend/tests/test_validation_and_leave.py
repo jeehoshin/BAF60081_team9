@@ -195,7 +195,7 @@ class ValidationAndLeaveTests(unittest.TestCase):
 
         # 나간 뒤에는 채팅 불가, 다시 참여는 가능
         talk = self.client.post(f"/meetups/{mid}/messages", json={"user_id": mate["user_id"], "body": "안녕"})
-        self.assertEqual(talk.status_code, 400)
+        self.assertEqual(talk.status_code, 403)  # 나간 사람은 참여자가 아니므로 권한 없음
         self.assertEqual(self.join(mid, mate).status_code, 201)
 
     def test_leave_rules(self):

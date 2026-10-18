@@ -51,8 +51,17 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
             # 빈 값·"선택 안 함"은 입력 안 한 것으로 저장
             if value in ("", "선택 안 함"):
                 value = None
-        if key == "nickname" and value is None:
-            raise HTTPException(status_code=400, detail="닉네임을 입력해 주세요.")
+        if key == "nickname":
+            if value is None:
+                raise HTTPException(status_code=400, detail="닉네임을 입력해 주세요.")
+            # 합류(POST /users)와 같이, 다른 사람이 쓰는 닉네임으로는 바꿀 수 없다 (대소문자 무시)
+            taken = (
+                db.query(User.user_id)
+                .filter(func.lower(User.nickname) == value.lower(), User.user_id != user_id)
+                .first()
+            )
+            if taken:
+                raise HTTPException(status_code=409, detail="이미 사용 중인 닉네임이에요. 다른 닉네임을 써 주세요.")
         setattr(user, key, value)
 
     db.commit()

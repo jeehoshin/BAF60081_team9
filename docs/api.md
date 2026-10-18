@@ -27,6 +27,7 @@ QR 이용자 등록. `gender`는 `남`·`여`, `age_group`은 `20대`·`30대`·
 같은 `user_id`를 유지하므로 참여한 모임·메시지는 그대로 남는다.
 
 **PATCH 입력** — 보낸 칸만 바뀐다. 빈 문자열·`"선택 안 함"`은 지움(`null`)으로 저장. `nickname`은 비울 수 없다 (`400`).
+`gender`·`age_group`은 `POST /users`와 같은 선택지만 받는다 (그 외 `422`). 다른 사람이 쓰는 닉네임으로는 바꿀 수 없다 (`409`, 대소문자 무시).
 
 ```json
 { "gender": "여", "age_group": "30대" }
@@ -119,7 +120,7 @@ QR 이용자 등록. `gender`는 `남`·`여`, `age_group`은 `20대`·`30대`·
 
 ## POST /activities/{activity_id}/likes
 
-좋아요 (선택 기능).
+좋아요 (선택 기능). 없는 활동·이용자는 `404`.
 
 ```json
 { "user_id": 2 }
@@ -211,7 +212,7 @@ KOPIS 통계 API(시·도별 `prfstsArea`, 장르별 `prfstsCate`, 일별 `prfst
 
 ## GET/POST /meetups/{meetup_id}/messages
 
-모임 채팅. 참여한 이용자만 POST 가능.
+모임 채팅. 참여한 이용자만 POST 가능 (참여하지 않았으면 `403`). GET은 최근 100개를 오래된 순으로 돌려준다.
 
 ```json
 { "user_id": 2, "body": "6시 정문에서 만나요!" }

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.collectors.common import AREAS, DAEJEON_LAT_MAX, SEOUL_LAT_MIN
 from app.database import get_db
-from app.models import Activity, Like, Meetup, Participant, now_kst
+from app.models import Activity, Like, Meetup, Participant, User, now_kst
 from app.schemas import (
     ActivityCreate,
     ActivityDetailOut,
@@ -125,6 +125,10 @@ def like_activity(activity_id: int, payload: LikeCreate, db: Session = Depends(g
     activity = db.get(Activity, activity_id)
     if not activity:
         raise HTTPException(status_code=404, detail="활동을 찾을 수 없습니다.")
+    # 없는 이용자면 PostgreSQL 외래키 오류(500)가 나므로 먼저 404로 알려 준다
+    # (DB를 정리한 뒤 휴대폰에 예전 계정이 남아 있을 때 생길 수 있다)
+    if not db.get(User, payload.user_id):
+        raise HTTPException(status_code=404, detail="이용자를 찾을 수 없습니다.")
     existing = (
         db.query(Like)
         .filter(Like.activity_id == activity_id, Like.user_id == payload.user_id)

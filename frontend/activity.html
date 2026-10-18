@@ -244,6 +244,8 @@
           btn.addEventListener("click", async () => {
             const u = UserStore.get();
             if (!u) return location.href = "register.html";
+            if (btn.disabled) return;
+            btn.disabled = true; // 연타 방지
             try {
               await api(`/meetups/${btn.dataset.join}/participants`, {
                 method: "POST",
@@ -251,7 +253,7 @@
               });
               await load();
               openChat(Number(btn.dataset.join));
-            } catch (e) { alert(e.message); }
+            } catch (e) { btn.disabled = false; alert(e.message); }
           });
         });
         meetups.querySelectorAll("[data-leave]").forEach((btn) => {

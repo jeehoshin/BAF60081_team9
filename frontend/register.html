@@ -112,6 +112,10 @@
         setStatus(statusEl, "만 19세 이상 확인에 체크해 주세요.", false);
         return;
       }
+      // 연타 방지: 느린 휴대폰에서 두 번 누르면 같은 닉네임 계정이 여러 개 생겼다 (10/11 '찬휘' 5개)
+      const submitBtn = document.getElementById("submitBtn");
+      if (submitBtn.disabled) return;
+      submitBtn.disabled = true;
       const fd = new FormData(e.target);
       const payload = Object.fromEntries(fd.entries());
       try {
@@ -130,6 +134,7 @@
           setTimeout(() => { location.href = "index.html"; }, 700);
         }
       } catch (err) {
+        submitBtn.disabled = false;
         // 수정 모드에서 계정이 서버에 없으면(예: DB 정리) 새로 합류하도록 안내
         if (editing && /찾을 수 없습니다/.test(err.message)) {
           UserStore.clear();

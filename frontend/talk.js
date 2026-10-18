@@ -243,9 +243,11 @@
     const composer = document.getElementById("composer");
     if (composer) {
       const input = composer.querySelector("input");
+      let sending = false; // 연타 방지: 빠른 인사 버튼을 두 번 누르면 같은 메시지가 두 번 올라갔다
       const send = async (body) => {
         body = body.trim();
-        if (!body) return;
+        if (!body || sending) return;
+        sending = true;
         try {
           await api(`/meetups/${id}/messages`, {
             method: "POST",
@@ -257,6 +259,8 @@
           loadRooms();
         } catch (e) {
           alert(e.message);
+        } finally {
+          sending = false;
         }
       };
       composer.addEventListener("submit", (e) => {
@@ -271,6 +275,8 @@
     if (joinBtn) {
       joinBtn.onclick = async () => {
         if (!user) return (location.href = "register.html");
+        if (joinBtn.disabled) return;
+        joinBtn.disabled = true; // 연타 방지: '저도 같이 갈래요!'가 두 번 올라가지 않게
         try {
           await api(`/meetups/${id}/participants`, { method: "POST", body: JSON.stringify({ user_id: user.user_id }) });
           await api(`/meetups/${id}/messages`, {
@@ -280,6 +286,7 @@
           await loadRooms();
           openRoom(id);
         } catch (e) {
+          joinBtn.disabled = false;
           alert(e.message);
         }
       };

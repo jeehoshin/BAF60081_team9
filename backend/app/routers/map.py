@@ -13,6 +13,15 @@ def _meetup_cards(db: Session, meetups: list[Meetup]) -> list[dict]:
         return []
     ids = [m.meetup_id for m in meetups]
 
+    # 활동·호스트를 모임마다 따로 부르지 않고 한 번에 불러온다.
+    # Render(미국)와 Supabase(서울) 사이는 쿼리 한 번마다 왕복 시간이 붙어서,
+    # 모임 수만큼 쿼리가 늘면 지도·모임톡 화면이 몇 초씩 느려진다.
+    activities = {
+        a.activity_id: a
+        for a in db.query(Activity).filter(Activity.activity_id.in_({m.activity_id for m in meetups}))
+    }
+    hosts = {u.user_id: u for u in db.query(User).filter(User.user_id.in_({m.host_id for m in meetups}))}
+
     people: dict[int, list[str]] = {i: [] for i in ids}
     member_details: dict[int, list[dict]] = {i: [] for i in ids}
     for meetup_id, u_id, nickname, age_group, gender in (
@@ -41,8 +50,8 @@ def _meetup_cards(db: Session, meetups: list[Meetup]) -> list[dict]:
 
     cards = []
     for m in meetups:
-        a: Activity = m.activity
-        host: User = m.host
+        a: Activity = activities[m.activity_id]
+        host: User | None = hosts.get(m.host_id)
         lat = m.lat if m.lat is not None else a.lat
         lng = m.lng if m.lng is not None else a.lng
         cards.append(

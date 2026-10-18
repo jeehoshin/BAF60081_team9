@@ -133,9 +133,12 @@
     }
   }
 
+  const joining = new Set(); // 연타 방지: 참여 요청이 끝나기 전에는 같은 모임을 다시 보내지 않는다
   async function join(meetupId) {
     const user = UserStore.get();
     if (!user) return (location.href = "register.html");
+    if (joining.has(meetupId)) return;
+    joining.add(meetupId);
     try {
       await api(`/meetups/${meetupId}/participants`, {
         method: "POST",
@@ -143,6 +146,7 @@
       });
       location.href = `talk.html?meetup=${meetupId}`;
     } catch (e) {
+      joining.delete(meetupId);
       alert(e.message);
     }
   }
