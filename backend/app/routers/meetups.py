@@ -277,16 +277,21 @@ def list_participants(meetup_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{meetup_id}/messages", response_model=list[MessageOut])
 def list_messages(meetup_id: int, db: Session = Depends(get_db)):
+    """모임톡 메시지. 최근 100개를 오래된 것부터 돌려준다.
+
+    (예전에는 '가장 오래된 100개'를 돌려줘서, 메시지가 100개를 넘으면 새 메시지가 화면에 안 보였다.)
+    """
     if not db.get(Meetup, meetup_id):
         raise HTTPException(status_code=404, detail="모임을 찾을 수 없습니다.")
     rows = (
         db.query(Message, User)
         .join(User, User.user_id == Message.user_id)
         .filter(Message.meetup_id == meetup_id)
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at.desc(), Message.message_id.desc())
         .limit(100)
         .all()
     )
+    rows.reverse()  # 화면에는 오래된 것부터 위에서 아래로
     return [
         MessageOut(
             message_id=m.message_id,
@@ -314,7 +319,8 @@ def post_message(meetup_id: int, payload: MessageCreate, db: Session = Depends(g
         .first()
     )
     if not joined:
-        raise HTTPException(status_code=400, detail="모임에 참여한 뒤에 메시지를 보낼 수 있습니다.")
+        # 권한 문제라 403 (발표 자료·API 문서의 '비참여자 403'과 맞춤)
+        raise HTTPException(status_code=403, detail="모임에 참여한 뒤에 메시지를 보낼 수 있습니다.")
 
     body = payload.body.strip()
     if not body:

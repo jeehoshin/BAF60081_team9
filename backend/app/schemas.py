@@ -55,13 +55,26 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    """내 정보 수정. 보낸 칸만 바뀐다 (빈 문자열은 '지움'으로 처리)."""
+    """내 정보 수정. 보낸 칸만 바뀐다 (빈 문자열은 '지움'으로 처리).
+
+    합류(UserCreate)와 같은 선택지만 받는다. 예전에는 검사가 없어서 '10대'·'기타'도 저장됐다.
+    """
 
     nickname: str | None = Field(default=None, min_length=1, max_length=64)
     gender: str | None = None
     age_group: str | None = None
-    preferred_types: str | None = None
-    preferred_regions: str | None = None
+    preferred_types: str | None = Field(default=None, max_length=128)
+    preferred_regions: str | None = Field(default=None, max_length=128)
+
+    @field_validator("gender")
+    @classmethod
+    def _gender(cls, v: str | None) -> str | None:
+        return _choice_or_none(v, GENDERS, "성별")
+
+    @field_validator("age_group")
+    @classmethod
+    def _age_group(cls, v: str | None) -> str | None:
+        return _choice_or_none(v, AGE_GROUPS, "연령대")
 
 
 class UserOut(BaseModel):
