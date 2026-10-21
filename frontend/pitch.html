@@ -452,7 +452,7 @@
               <tr><td><code>participants</code></td><td><code>id</code></td><td>FK <code>meetup_id</code>, <code>user_id</code> · UNIQUE(둘)</td><td><code>joined_at</code>, <code>vote</code></td><td>참여 <code>POST</code> / 나가기 <code>DELETE</code>. <code>SELECT … FOR UPDATE</code>로 동시 참여 정원 초과 차단</td></tr>
               <tr><td><code>messages</code></td><td><code>message_id</code></td><td>FK <code>meetup_id</code>, <code>user_id</code></td><td><code>body</code>(≤280자), <code>created_at</code>(KST)</td><td><code>GET/POST /meetups/{id}/messages</code>, 참여자만</td></tr>
               <tr><td><code>likes</code></td><td><code>id</code></td><td>FK · UNIQUE(<code>user_id</code>, <code>activity_id</code>)</td><td><code>created_at</code></td><td>찜 토글·카운트</td></tr>
-              <tr><td><code>kopis_stats</code></td><td><code>id</code></td><td>UNIQUE(<code>kind</code>, <code>period_from</code>, <code>period_to</code>, <code>label</code>)</td><td><code>kind</code>(area/genre/day), <code>label</code>, <code>level</code>, <code>performance_count</code>, <code>amount</code>(BigInt), <code>audience</code>, <code>seats</code>, 비중</td><td><code>POST /collect/kopis-stats</code> → 지표 A·B·C·인구당</td></tr>
+              <tr><td><code>kopis_stats</code></td><td><code>id</code></td><td>UNIQUE(<code>kind</code>, <code>period_from</code>, <code>period_to</code>, <code>label</code>)</td><td><code>kind</code>(area/genre/day), <code>label</code>, <code>level</code>, <code>performance_count</code>, <code>amount</code>(BigInt), <code>audience</code>, <code>seats</code>, 비중</td><td><code>POST /collect/kopis-stats</code> → 시·도·장르·요일별·인구당</td></tr>
               <tr><td><code>collect_runs</code></td><td><code>id</code></td><td>—</td><td><code>kind</code>, <code>trigger</code>, <code>dry_run</code>, <code>started_at</code>, <code>window_*</code>, <code>collected</code>, <code>inserted</code>, <code>updated</code>, <code>skipped</code>, <code>error_count</code>, <code>details</code>(JSON)</td><td>수집마다 자동 1행 → <code>GET /stats/collect-runs</code>, 품질 표</td></tr>
             </tbody>
           </table>
@@ -482,9 +482,9 @@
           <h4>📊 수집 · 분석</h4>
           <div class="ep"><span class="m-badge m-post">POST</span><div><code>/collect</code><span>공공 API 3종 수집. <code>x-collect-token</code>, <code>dry_run</code></span></div></div>
           <div class="ep"><span class="m-badge m-post">POST</span><div><code>/collect/kopis-stats</code><span>KOPIS 전국 통계 3개월</span></div></div>
-          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/kopis</code><span>지표 A·B·C + 인구 10만 명당</span></div></div>
-          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/regions</code><span>구별 인구 10만 명당 활동 수 · 도시 안 분포 (지표 G)</span></div></div>
-          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/quality</code> · <code>/stats/collect-runs</code><span>결측·중복·수집 기록 (지표 H)</span></div></div>
+          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/kopis</code><span>시·도·장르·요일별 + 인구 10만 명당</span></div></div>
+          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/regions</code><span>구별 인구 10만 명당 활동 수 · 도시 안 분포</span></div></div>
+          <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/quality</code> · <code>/stats/collect-runs</code><span>결측·중복·수집 기록</span></div></div>
           <div class="ep"><span class="m-badge m-get">GET</span><div><code>/stats/users · /stats/meetups</code><span><code>since</code>로 "오늘 QR 참여자만"</span></div></div>
         </div>
       </div>
@@ -535,7 +535,7 @@
       </div>
 
       <div class="hyp">
-        <div class="q"><small>가설 1</small><b>공연 시장은 서울에 극단적으로 몰려 있다</b><span class="ind">지표 A · KOPIS 시·도별 통계</span></div>
+        <div class="q"><small>가설 1</small><b>공연 시장은 서울에 극단적으로 몰려 있다</b><span class="ind">KOPIS 시·도별 통계</span></div>
         <div class="r" id="hyp1Result"><div class="big">불러오는 중…</div></div>
         <div class="s"><small>그래서</small>대전 같은 비수도권은 예매처 하나로는 정보를 찾기 어렵다 → <b>공공 API 3종 통합 탐색</b>이 필요하다.</div>
       </div>
@@ -545,17 +545,17 @@
         <div class="s"><small>그래서</small>"서울은 사람이 많아서"라는 반론에 답했다. 공급이 적은 대전에서는 <b>축제·전시 + 사용자가 직접 여는 활동(러닝)</b>이 중요하다.</div>
       </div>
       <div class="hyp">
-        <div class="q"><small>가설 3</small><b>문화 수요는 주말에 몰린다</b><span class="ind">지표 C · 요일별 하루 평균 관객 수</span></div>
+        <div class="q"><small>가설 3</small><b>문화 수요는 주말에 몰린다</b><span class="ind">요일별 하루 평균 관객 수</span></div>
         <div class="r" id="hyp3Result"><div class="big">불러오는 중…</div></div>
         <div class="s"><small>그래서</small>홈 화면 <b>"오늘 / 이번 주말 / 다음 주"</b> 기간 겹침 필터와 주말 번개 모임이 핵심 기능이다.</div>
       </div>
       <div class="hyp">
-        <div class="q"><small>가설 4</small><b>많이 열리는 장르와 돈이 되는 장르는 다르다</b><span class="ind">지표 B · 장르별 상연 횟수 vs 판매액</span></div>
+        <div class="q"><small>가설 4</small><b>많이 열리는 장르와 돈이 되는 장르는 다르다</b><span class="ind">장르별 상연 횟수 vs 판매액</span></div>
         <div class="r" id="hyp4Result"><div class="big">불러오는 중…</div></div>
         <div class="s"><small>그래서</small>뮤지컬·대중음악은 매출, 연극·클래식은 횟수. <b>유형·취향 기반 매칭</b>이 유효하다.</div>
       </div>
       <div class="hyp">
-        <div class="q"><small>가설 5</small><b>세 출처는 서로 다른 빈칸을 채우고, 겹치는 건 드물다</b><span class="ind">지표 E · H · 출처별 품질 · 중복 탐지</span></div>
+        <div class="q"><small>가설 5</small><b>세 출처는 서로 다른 빈칸을 채우고, 겹치는 건 드물다</b><span class="ind">출처별 품질 · 중복 탐지</span></div>
         <div class="r" id="hyp5Result"><div class="big">불러오는 중…</div></div>
         <div class="s"><small>그래서</small>공연·축제·전시를 각각 다른 기관에서 받아 합치는 게 맞았다. 중복은 <b>제목 정규화 + 기간 + 구</b> 규칙으로 자동 후보 검출만 한다.</div>
       </div>
