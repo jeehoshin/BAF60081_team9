@@ -23,6 +23,7 @@ cd web
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # 타입 검사 + dist/ 생성
+npm run build:html # 파일 하나짜리 HTML → dist-html/gachi-galae-prototype.html (단톡 첨부·서버 없이 열기)
 ```
 
 개발 서버는 `/api/...` 요청을 Render 백엔드로 넘긴다(`vite.config.ts`). 그래서 백엔드의 CORS 설정을 바꾸지 않아도 된다.
