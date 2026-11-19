@@ -22,6 +22,7 @@ KOPIS 통계(시·도·장르·일별) → POST /collect/kopis-stats (또는 scr
 ```
 backend/     FastAPI (Render) · 공공 API 수집기 backend/app/collectors/
 frontend/    시연 화면 (Vercel)
+web/         금융빅데이터분석실습 AI UI 프로토타입 (React · Vite) → web/README.md
 scripts/     공공 API 수집 로컬 실행용
 docs/        키 체크리스트 · 수집 · 배포 · API · DB
 ```
@@ -77,6 +78,7 @@ docs/        키 체크리스트 · 수집 · 배포 · API · DB
 | `live.html` | 발표용 라이브 보드 (등록·참여·메시지 실시간) |
 | `stats.html` | 수집/이용 데이터 분석 (KOPIS 통계, 인구 10만 명당 비교, 데이터 품질) |
 | `create.html` | 러닝 등 사용자 활동 등록 |
+| `plan.html` | 금융빅데이터분석실습 5주차 아이디어·UI 공유 페이지 |
 
 발표 흐름: **프로젝터에 live → 청중 QR 등록 → 모임 참여·메시지 → 통계 변화**.
 
