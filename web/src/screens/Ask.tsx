@@ -124,7 +124,7 @@ export default function Ask({ items, demo, onDraft }: { items: Activity[]; demo:
         ))}
 
         {loading && <StepLoader steps={STEPS} current={step} slow={demo === "slow"} />}
-        {err && <ErrorBox kind={err.kind} onRetry={() => ask(err.q)} onFallback={() => (location.hash = "#/search")} fallbackLabel="일반 검색으로 찾기" />}
+        {err && <ErrorBox kind={err.kind} onRetry={() => ask(err.q)} onFallback={() => (location.hash = "#search")} fallbackLabel="일반 검색으로 찾기" />}
       </div>
 
       <form

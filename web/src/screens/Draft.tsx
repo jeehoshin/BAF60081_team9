@@ -92,7 +92,7 @@ export default function Draft({ items, demo, activityId }: { items: Activity[]; 
           <p className="meta">📅 {fmtPeriod(activity)}</p>
           <p className="meta">📍 {activity.place ?? "장소 정보 없음"}</p>
           <p className="meta">💳 {fmtCost(activity)}</p>
-          <a className="link" href="#/draft">
+          <a className="link" href="#draft">
             다른 행사 고르기
           </a>
         </aside>
@@ -242,7 +242,7 @@ function Picker({ items }: { items: Activity[] }) {
         <ul className="pick">
           {list.map((a) => (
             <li key={a.activity_id}>
-              <a href={`#/draft?id=${a.activity_id}`}>
+              <a href={`#draft-${a.activity_id}`}>
                 <span className={`tag t-${a.activity_type}`}>{a.activity_type}</span>
                 <b>{a.title}</b>
                 <span className="muted small">

@@ -4,6 +4,7 @@ import { loadActivities, type LoadResult } from "./data";
 import Search from "./screens/Search";
 import Ask from "./screens/Ask";
 import Draft from "./screens/Draft";
+import mascot from "./mascot.svg";
 
 const TABS: [string, string][] = [
   ["search", "🔎 AI 검색"],
@@ -20,10 +21,13 @@ const DEMO_OPTS: [DemoMode, string][] = [
   ["unsure", "AI 확신 낮음"],
 ];
 
+// 공유 페이지(Artifact)는 '#이름' 모양의 주소만 넘겨 주므로 '#draft-172'처럼 쓴다. 예전 모양 '#/draft?id=172'도 읽는다
 function readHash() {
-  const [path, query] = location.hash.replace(/^#\/?/, "").split("?");
-  const id = new URLSearchParams(query ?? "").get("id");
-  return { tab: TABS.some(([k]) => k === path) ? path : "search", id: id ? Number(id) : null };
+  const h = location.hash.replace(/^#\/?/, "");
+  const m = h.match(/^draft(?:-(\d+)|\?id=(\d+))?$/);
+  if (m) return { tab: "draft", id: m[1] || m[2] ? Number(m[1] ?? m[2]) : null };
+  const tab = h.split("?")[0];
+  return { tab: TABS.some(([k]) => k === tab) ? tab : "search", id: null };
 }
 
 export default function App() {
@@ -47,20 +51,20 @@ export default function App() {
   };
   useEffect(reload, []);
 
-  const toDraft = (a: Activity) => (location.hash = `#/draft?id=${a.activity_id}`);
+  const toDraft = (a: Activity) => (location.hash = `#draft-${a.activity_id}`);
 
   return (
     <>
       <header className="top">
         <div className="top-in">
-          <a className="brand" href="#/search">
-            <img src="/mascot.svg" alt="" />
+          <a className="brand" href="#search">
+            <img src={mascot} alt="" />
             같이 <span>갈래?</span>
             <small>AI 프로토타입</small>
           </a>
           <nav className="tabs" aria-label="화면">
             {TABS.map(([k, label]) => (
-              <a key={k} href={`#/${k}`} className={route.tab === k ? "on" : ""}>
+              <a key={k} href={`#${k}`} className={route.tab === k ? "on" : ""}>
                 {label}
               </a>
             ))}
