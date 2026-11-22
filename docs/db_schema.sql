@@ -26,7 +26,14 @@ create table if not exists activities (
   image_url varchar(512),         -- 포스터·대표 이미지
   lat double precision,
   lng double precision,
-  created_at timestamp default now()
+  created_at timestamp default now(),
+  detail_text text,               -- 상세 API의 줄거리·개요·전시 설명 (태그 뺀 글자, 최대 4,000자)
+  detail_source varchar(32),      -- sty(KOPIS) / overview(한국관광공사) / contents1(한국문화정보원)
+  text_hash varchar(64),          -- detail_text의 sha256. 바뀐 행사만 다시 임베딩할 때
+  min_age_months int,             -- 관람 가능 최소 나이(개월). 전체 관람가 0
+  runtime_min int,                -- 러닝타임(분)
+  intro_images text,              -- KOPIS 소개 이미지 주소 목록 (JSON 배열)
+  detail_checked_at timestamp     -- 상세를 마지막으로 확인한 때
 );
 
 create table if not exists meetups (
@@ -89,6 +96,16 @@ alter table activities add column if not exists external_id varchar(64);
 alter table activities add column if not exists source_url varchar(512);
 alter table activities add column if not exists image_url varchar(512);
 create unique index if not exists uq_activities_external_id on activities (external_id);
+
+-- 상세 설명·관람 조건 칸 (2026-11). docs/migrations/20261122_activity_detail.sql과 같다.
+-- 백엔드가 시작할 때 없으면 자동으로 추가하지만, SQL Editor에서 직접 돌려도 된다.
+alter table activities add column if not exists detail_text text;
+alter table activities add column if not exists detail_source varchar(32);
+alter table activities add column if not exists text_hash varchar(64);
+alter table activities add column if not exists min_age_months int;
+alter table activities add column if not exists runtime_min int;
+alter table activities add column if not exists intro_images text;
+alter table activities add column if not exists detail_checked_at timestamp;
 
 -- KOPIS 공연 통계 (분석 전용, 2026-10). 백엔드가 시작할 때 없으면 자동으로 만든다.
 -- kind: area(시·도별, level = 시도/권역/합계) / genre(장르별) / day(일별). 한 달 단위로 저장.

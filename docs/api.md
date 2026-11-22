@@ -43,6 +43,9 @@ QR 이용자 등록. `gender`는 `남`·`여`, `age_group`은 `20대`·`30대`·
 - 날짜 조건은 **기간 겹침**으로 거른다 (공연·축제는 `starts_at`~`ends_at` 기간이 범위와 하루라도 겹치면 나옴)
 - 정렬: 지금 볼 수 있거나 곧 시작하는 것 먼저, 이미 끝난 것은 맨 뒤
 - 응답에 `ends_at`, `external_id`, `source_url`, `image_url`이 추가됐다 (사용자 활동은 대부분 `null`)
+- `age_months`(0~300): 이 나이(개월)인 사람도 볼 수 있는 행사만. 예: `36`이면 `36개월 이상`·`전체 관람가`까지 나오고 `만 7세 이상`은 빠진다. 관람연령을 모르는 행사는 뺀다
+- `max_runtime`(분): 러닝타임이 이 이하인 행사만 (모르는 행사는 뺀다)
+- 응답에 `min_age_months`(관람 가능 최소 나이, 개월), `runtime_min`(러닝타임, 분)이 있다. 설명 원문은 목록에 넣지 않는다 (응답이 커지지 않게)
 - `source`: `user` · `API`(시드) · `KOPIS` · `한국관광공사`
 
 ## POST /collect
@@ -57,15 +60,18 @@ QR 이용자 등록. `gender`는 `남`·`여`, `age_group`은 `20대`·`30대`·
 | `days` | `30` | 오늘부터 며칠 뒤까지 (1~60) |
 | `kopis_per_genre` | `6` | KOPIS 장르(9개)마다 지역별 최대 건수 |
 | `max_span_days` | `90` | 이보다 긴 장기·상설 행사 제외 (0 = 제한 없음) |
+| `detail` | `new` | 상세 설명 조회. `new` = 새 행사·30일 넘게 확인 안 한 행사만, `all` = 전부 다시, `off` = 부르지 않음. KOPIS는 원래 상세를 불러서 항상 채운다 |
 | `dry_run` | `false` | `true`면 저장하지 않고 결과만 |
 
-**응답** `200` — `collected`, `inserted`, `updated`, `unchanged`, 출처·지역별 `results`(받은 수, 뺀 이유, 오류), `sample`
+**응답** `200` — `collected`, `inserted`, `updated`, `unchanged`, 출처·지역별 `results`(받은 수, 뺀 이유, 오류, `details` = 상세 불러옴·설명 있음·실패·미룸·최근 확인이라 건너뜀), `sample`, `text_coverage`(DB 전체 출처별 행사 수·설명 있음·200자 이상·관람연령 있음)
 
 - `401` 토큰 불일치 · `503` `COLLECT_TOKEN` 미설정 · `422` 잘못된 옵션
 
 ## GET /activities/{activity_id}
 
 활동 상세 + 모임 목록 + 좋아요 수.
+
+- `detail`: 상세 설명 (`detail_text`, `detail_source`, `text_hash`, `intro_images`, `detail_checked_at`). 아직 확인하지 않은 행사·사용자 활동은 `null`
 
 ## POST /activities
 

@@ -36,6 +36,8 @@ def main() -> int:
     parser.add_argument("--per-genre", type=int, default=6, help="KOPIS 장르마다 지역별 최대 건수 (기본 6)")
     parser.add_argument("--max-span-days", type=int, default=90, help="이보다 긴 장기 행사 제외, 0=제한 없음 (기본 90)")
     parser.add_argument("--culture-max-span-days", type=int, default=0, help="한국문화정보원 전시만 따로, 0=제한 없음 (기본 0: 상설·장기 전시도 받음)")
+    parser.add_argument("--detail", default="new", choices=("new", "all", "off"),
+                        help="상세 설명 조회: new=새 행사·오래 확인 안 한 행사만(기본), all=전부 다시, off=부르지 않음")
     parser.add_argument("--dry-run", action="store_true", help="저장하지 않고 결과만 출력")
     args = parser.parse_args()
 
@@ -51,6 +53,7 @@ def main() -> int:
             kopis_per_genre=args.per_genre,
             max_span_days=args.max_span_days,
             culture_max_span_days=args.culture_max_span_days,
+            detail=args.detail,
         )
     except ValueError as exc:
         print(f"[옵션 오류] {exc}")

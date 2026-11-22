@@ -338,7 +338,12 @@ class SchemaTests(unittest.TestCase):
             ))
             conn.execute(text("insert into activities (activity_type, title) values ('러닝', '예전 활동')"))
         added = ensure_schema(engine)
-        self.assertEqual(set(added), {"activities.ends_at", "activities.external_id", "activities.source_url", "activities.image_url"})
+        self.assertEqual(set(added), {
+            "activities.ends_at", "activities.external_id", "activities.source_url", "activities.image_url",
+            # 2026-11 상세 설명·관람 조건
+            "activities.detail_text", "activities.detail_source", "activities.text_hash", "activities.min_age_months",
+            "activities.runtime_min", "activities.intro_images", "activities.detail_checked_at",
+        })
         columns = {c["name"] for c in inspect(engine).get_columns("activities")}
         self.assertTrue({"ends_at", "external_id", "source_url", "image_url"} <= columns)
         self.assertEqual(ensure_schema(engine), [])  # 두 번째는 할 일이 없다
@@ -368,8 +373,8 @@ class ApiTests(unittest.TestCase):
         calls = []
         original = runner.gather_rows
 
-        def fake_gather(opts, kopis_key="", tour_key="", transport=None, culture_key=""):
-            return original(opts, kopis_key, tour_key, make_transport(calls))
+        def fake_gather(opts, kopis_key="", tour_key="", transport=None, culture_key="", **kwargs):
+            return original(opts, kopis_key, tour_key, make_transport(calls), **kwargs)
 
         with mock.patch.object(runner, "today_kst", return_value=TODAY), mock.patch.object(
             runner, "gather_rows", fake_gather

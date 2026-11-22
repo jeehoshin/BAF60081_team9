@@ -2,7 +2,8 @@
 
 지역마다 이렇게 부른다.
 1. 공연목록 pblprfr        : 장르별로, 수집 기간과 겹치는 공연을 받는다.
-2. 공연상세 pblprfr/{mt20id} : 공연시간, 관람료, 공연시설 ID(mt10id), 예매처.
+2. 공연상세 pblprfr/{mt20id} : 공연시간, 관람료, 공연시설 ID(mt10id), 예매처,
+                             줄거리(sty), 관람연령(prfage), 러닝타임(prfruntime), 소개 이미지(styurls).
 3. 공연시설상세 prfplc/{mt10id}: 주소(→ 구), 위도·경도. 같은 시설은 한 번만 부른다.
 
 응답은 XML이다. <dbs><db>...</db></dbs>
@@ -21,11 +22,14 @@ from app.collectors.common import (
     CollectError,
     SourceReport,
     clip,
+    detail_fields,
     end_of,
     gu_from_address,
     https,
     join_parts,
     overlaps,
+    parse_age_months,
+    parse_runtime_min,
     parse_ymd,
     start_of,
     to_float,
@@ -80,6 +84,21 @@ def parse_dbs(content: bytes | str) -> list[ET.Element]:
 def fields(db: ET.Element) -> dict[str, str]:
     """db 요소의 한 단계 아래 값들을 dict로. 하위 목록(relates 등)은 따로 읽는다."""
     return {child.tag: (child.text or "").strip() for child in db if len(child) == 0}
+
+
+def synopsis(db: ET.Element) -> str | None:
+    """줄거리(sty). 안에 태그가 섞여 와도 글자만 모은다. 대부분은 비어 있고 소개 이미지(styurls)만 있다."""
+    el = db.find("sty")
+    return "".join(el.itertext()) if el is not None else None
+
+
+def intro_images(db: ET.Element) -> list[str]:
+    urls = []
+    for el in db.findall("./styurls/styurl"):
+        url = https((el.text or "").strip())
+        if url and url not in urls:
+            urls.append(url)
+    return urls
 
 
 def booking_sites(db: ET.Element) -> list[str]:
@@ -230,6 +249,10 @@ async def fetch_area(
             return None
         detail = fields(detail_dbs[0])
         sites = booking_sites(detail_dbs[0])
+        # 상세 응답에 이미 있는 줄거리·관람연령·러닝타임·소개 이미지를 함께 저장한다 (추가 호출 없음)
+        extra = detail_fields(synopsis(detail_dbs[0]), "sty", images=intro_images(detail_dbs[0]))
+        report.details["fetched"] += 1
+        report.details["with_text"] += int(bool(extra["detail_text"]))
 
         place_info: dict[str, str] = {}
         if detail.get("mt10id"):
@@ -269,6 +292,9 @@ async def fetch_area(
             "lng": to_float(place_info.get("lo")),
             "source_url": clip(PAGE_URL.format(id=pid), "source_url"),
             "image_url": clip(https(item.get("poster") or detail.get("poster")), "image_url"),
+            "min_age_months": parse_age_months(detail.get("prfage")),
+            "runtime_min": parse_runtime_min(detail.get("prfruntime")),
+            **extra,
         }
 
     rows = await asyncio.gather(*(build(pid, item) for pid, item in picked.items()))
