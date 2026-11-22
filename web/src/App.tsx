@@ -96,7 +96,7 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        데이터 출처: KOPIS 공연예술통합전산망 · 한국관광공사 TourAPI · 한국문화정보원 · 9조 같이 갈래?{" "}
+        데이터 출처: KOPIS 공연예술통합전산망 · 한국관광공사 TourAPI · 한국문화정보원 · 1조 같이 갈래?{" "}
         <a href="https://baf60081team9-frontend.vercel.app/" target="_blank" rel="noreferrer">
           기존 서비스
         </a>
