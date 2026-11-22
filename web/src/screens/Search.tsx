@@ -1,10 +1,11 @@
 import { useRef, useState } from "react";
-import type { Activity, City, Conditions, DatePreset, DemoMode, Parsed } from "../types";
+import type { Activity, City, Conditions, DatePreset, DemoMode, Parsed, Pref } from "../types";
 import { parseQuery, toSchemaJson, wait } from "../ai";
 import { DATE_LABEL, applyConditions, fmtAgeCond, relaxOptions } from "../filters";
 import { ActivityCard, ErrorBox, Proto, StepLoader, type ErrorKind } from "../components";
+import { PREFS, PREF_LABEL, rankByPrefs, summarize } from "../prefs";
 
-const EXAMPLES = ["이번 주말 서울 공연", "서울 3만원 이하 공연", "아이랑 볼 90분 이하 공연", "주차 편한 실내 데이트"];
+const EXAMPLES = ["이번 주말 서울 공연", "이번 주말 아이랑 갈 만한 곳", "아이랑 볼 90분 이하 공연", "주차 편한 실내 데이트"];
 const STEPS = ["문장 이해하기", "조건에 맞는 행사 찾기", "결과 정리하기"];
 const PAGE = 12;
 
@@ -20,6 +21,7 @@ function countRecognized(c: Conditions) {
     c.maxCost !== undefined ? "cost" : undefined,
     c.ageMonths !== undefined ? "age" : undefined,
     c.maxRuntime !== undefined ? "run" : undefined,
+    ...(c.prefs ?? []),
   ].filter(Boolean).length;
 }
 
@@ -100,7 +102,13 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
     setShown(PAGE);
   }
 
-  const results = phase === "done" && !forceEmpty ? applyConditions(items, cond) : [];
+  // 조건으로 걸러낸 뒤, 선호(아이랑·실내…)는 근거 있는 행사를 위로 올린다
+  const results = phase === "done" && !forceEmpty ? rankByPrefs(applyConditions(items, cond), cond.prefs) : [];
+  // 나이를 숫자로 걸러내면 관람연령 칸이 없는 행사(전시·축제 등)는 빠진다. 몇 건이 빠졌는지 알려 준다
+  const ageUnknown =
+    phase === "done" && cond.ageMonths !== undefined
+      ? applyConditions(items, { ...cond, ageMonths: undefined }).filter((a) => a.min_age_months === null || a.min_age_months === undefined).length
+      : 0;
   const relax = phase === "done" && results.length === 0 ? relaxOptions(items, cond) : [];
   const recCount = countRecognized(cond);
 
@@ -110,7 +118,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
         <h1>
           말로 찾는 <em>이번 주 활동</em>
         </h1>
-        <p className="lead">평소 말하듯 적으면 AI가 날짜·지역·유형·가격·관람연령·러닝타임 조건으로 바꿔서 공공 데이터에서 찾아 줘요.</p>
+        <p className="lead">평소 말하듯 적으면 AI가 날짜·지역·유형·가격 같은 조건으로 걸러 주고, ‘아이랑·실내’처럼 딱 맞는 칸이 없는 말은 근거를 찾아 순서로 반영해요.</p>
         <form
           className="searchbar"
           onSubmit={(e) => {
@@ -166,7 +174,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
           <div>
             <h3>이렇게 이해했는데, 맞나요?</h3>
             <p>
-              문장에서 확실히 인식한 조건이 <b>{countRecognized(parsed.conditions)}개</b>뿐이라 바로 찾지 않고 먼저 물어볼게요.
+              문장을 제대로 이해했는지 확실하지 않아서 바로 찾지 않고 먼저 물어볼게요. (알아들은 조건 {countRecognized(parsed.conditions)}개)
             </p>
             <ConditionBar cond={cond} onChange={update} />
             <Ignored words={parsed.ignored} />
@@ -196,6 +204,9 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
               </button>
             </div>
             <ConditionBar cond={cond} onChange={update} />
+            <p className="legend small muted">
+              <span className="chip mini">조건</span> 맞지 않으면 걸러내요 · <span className="chip pref mini">✨ 선호</span> 걸러내지 않고 근거 있는 행사를 위로 올려요
+            </p>
             <Ignored words={parsed.ignored} />
             {showJson && (
               <div className="json-wrap">
@@ -208,14 +219,35 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
             <p className="small muted">틀렸다면 칩의 ✕를 누르거나 조건을 추가해 바로 고칠 수 있어요. AI를 다시 부르지 않아요.</p>
           </div>
 
+          {ageUnknown > 0 && (
+            <p className="ignored">
+              관람연령 정보가 없는 행사 <b>{ageUnknown}건</b>(주로 전시·축제)은 나이 조건 때문에 빠졌어요.{" "}
+              <button className="link" onClick={() => update({ ...cond, ageMonths: undefined, prefs: Array.from(new Set([...(cond.prefs ?? []), "family" as Pref])) })}>
+                빼지 말고 ‘아이랑’ 선호로 바꾸기
+              </button>
+            </p>
+          )}
+
           {results.length > 0 ? (
             <>
               <p className="count">
                 <b>{results.length}건</b> 찾았어요 · 끝난 행사는 뺐어요
               </p>
+              {(cond.prefs ?? []).map((pref) => {
+                const s = summarize(results, pref);
+                return (
+                  <p key={pref} className="pref-sum">
+                    <span className="chip pref mini">✨ {PREF_LABEL[pref]}</span>
+                    근거: <span className="ev-pill ev-data">✅ 데이터로 확인 {s.data}</span>
+                    <span className="ev-pill ev-guess">🔎 설명·장소로 추정 {s.guess}</span>
+                    <span className="ev-pill ev-none">❔ 정보 없음 {s.none}</span>
+                    {s.against > 0 && <span className="ev-pill ev-against">⛔ 맞지 않음 {s.against}</span>}
+                  </p>
+                );
+              })}
               <div className="grid">
                 {results.slice(0, shown).map((a) => (
-                  <ActivityCard key={a.activity_id} a={a} onDraft={onDraft} />
+                  <ActivityCard key={a.activity_id} a={a} onDraft={onDraft} prefs={cond.prefs} />
                 ))}
               </div>
               {shown < results.length && (
@@ -258,7 +290,7 @@ function Ignored({ words }: { words: string[] }) {
   if (!words.length) return null;
   return (
     <p className="ignored">
-      ⚠️ <b>{words.map((w) => `‘${w}’`).join(", ")}</b>은(는) 아직 공공 데이터 테이블에 없는 속성이라 필터에 반영하지 못했어요. 아래 카드 설명에서 직접 확인해 주세요.
+      ⚠️ <b>{words.map((w) => `‘${w}’`).join(", ")}</b>은(는) 공공 데이터에 근거를 찾을 정보가 없어서 반영하지 못했어요. 원문 링크나 장소에 직접 확인해 주세요.
     </p>
   );
 }
@@ -293,14 +325,24 @@ function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Cond
   if (cond.maxCost !== undefined) chips.push({ label: `${(cond.maxCost / 10000).toLocaleString("ko-KR")}만원 이하`, clear: { ...cond, maxCost: undefined } });
   if (cond.ageMonths !== undefined) chips.push({ label: fmtAgeCond(cond.ageMonths), clear: { ...cond, ageMonths: undefined } });
   if (cond.maxRuntime !== undefined) chips.push({ label: `${cond.maxRuntime}분 이하`, clear: { ...cond, maxRuntime: undefined } });
+  const prefs = cond.prefs ?? [];
+  const setPrefs = (next: Pref[]) => onChange({ ...cond, prefs: next.length ? next : undefined });
 
   return (
     <div className="chips">
-      {chips.length === 0 && <span className="muted small">조건 없음 · 전체에서 찾아요</span>}
+      {chips.length === 0 && prefs.length === 0 && <span className="muted small">조건 없음 · 전체에서 찾아요</span>}
       {chips.map((c) => (
         <span key={c.label} className="chip">
           {c.label}
           <button aria-label={`${c.label} 조건 빼기`} onClick={() => onChange(c.clear)}>
+            ✕
+          </button>
+        </span>
+      ))}
+      {prefs.map((p) => (
+        <span key={p} className="chip pref" title="걸러내지 않고, 근거 있는 행사를 위로 올려요">
+          ✨ {PREF_LABEL[p]}
+          <button aria-label={`${PREF_LABEL[p]} 선호 빼기`} onClick={() => setPrefs(prefs.filter((x) => x !== p))}>
             ✕
           </button>
         </span>
@@ -356,6 +398,16 @@ function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Cond
           {RUNTIME_OPTS.map(([label, m]) => (
             <option key={m} value={m}>
               {label}
+            </option>
+          ))}
+        </select>
+      )}
+      {prefs.length < PREFS.length && (
+        <select aria-label="선호 추가" value="" onChange={(e) => setPrefs([...prefs, e.target.value as Pref])}>
+          <option value="">+ 선호</option>
+          {PREFS.filter((p) => !prefs.includes(p)).map((p) => (
+            <option key={p} value={p}>
+              {PREF_LABEL[p]}
             </option>
           ))}
         </select>

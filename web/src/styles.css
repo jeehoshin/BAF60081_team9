@@ -244,3 +244,25 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .searchbar .btn { width: 100%; }
   .tabs a { padding: 6px 10px; font-size: 0.84rem; }
 }
+
+/* 선호 조건과 근거 (prefs.ts) */
+.chip.pref { background: #fff8e8; border-color: var(--bun-deep); border-style: dashed; color: #7a5200; }
+.chip.mini { padding: 1px 8px; font-size: 0.74rem; }
+.legend { margin: 2px 0 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pref-sum { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.84rem; color: var(--muted); margin: 0 0 10px; }
+.ev-pill { border-radius: 999px; padding: 2px 9px; font-weight: 700; font-size: 0.78rem; }
+.ev-pill.ev-data { background: #e9f8ef; color: #1e7a4a; }
+.ev-pill.ev-guess { background: #eef3ff; color: #1d4ed8; }
+.ev-pill.ev-none { background: #f1f3f7; color: var(--muted); }
+.ev-pill.ev-against { background: #fdecea; color: #a8352c; }
+.evid { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 5px; }
+.evid li { font-size: 0.8rem; line-height: 1.45; border-radius: 10px; padding: 6px 9px; overflow-wrap: anywhere; }
+.evid li.ev-data { background: #e9f8ef; color: #1e5c3c; }
+.evid li.ev-against { background: #fdecea; color: #8c2f27; }
+.evid li.ev-guess { background: #eef3ff; color: #23407a; }
+.evid li.ev-none { background: #f4f6fa; color: var(--muted); }
+.evid q { display: block; margin-top: 3px; font-style: normal; color: var(--ink); quotes: "“" "”"; }
+.evid mark { background: var(--bun); color: #3d2a00; border-radius: 3px; padding: 0 2px; }
+.ev-from { color: var(--muted); }
+.ev-report { margin-top: 4px; border: none; background: none; padding: 0; color: var(--muted); font-size: 0.74rem; text-decoration: underline; cursor: pointer; }
+.ev-thanks { display: block; margin-top: 4px; font-size: 0.74rem; color: var(--ok); }

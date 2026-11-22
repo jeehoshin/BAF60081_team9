@@ -18,6 +18,8 @@ export type Activity = {
 };
 
 export type City = "서울" | "대전";
+// 걸러내지 않고 순서에만 반영하는 선호 (prefs.ts)
+export type Pref = "family" | "indoor" | "outdoor" | "date" | "handson";
 export type DatePreset = "today" | "tomorrow" | "weekend" | "thisweek" | "nextweek" | "month";
 
 // AI가 문장에서 뽑아내는 검색 조건. 실제 서비스에서는 LLM 구조화 출력의 스키마가 된다.
@@ -30,6 +32,7 @@ export type Conditions = {
   free?: boolean;
   ageMonths?: number; // 이 나이(개월)인 사람도 볼 수 있는 행사만 (min_age_months <= ageMonths)
   maxRuntime?: number; // 러닝타임이 이 분 이하인 행사만 (runtime_min <= maxRuntime)
+  prefs?: Pref[]; // 선호: 걸러내지 않고 근거 있는 행사를 위로 올린다
 };
 
 export type Parsed = {

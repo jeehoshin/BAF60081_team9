@@ -178,7 +178,7 @@ export default function Ask({ items, demo, onDraft }: { items: Activity[]; demo:
                   {t.a.sources.map(({ item, score }, i) => (
                     <div key={item.activity_id} id={`t${ti}-ref-${i + 1}`} className={`src-wrap ${hl === `t${ti}-ref-${i + 1}` ? "hl" : ""}`}>
                       <span className="score">유사도 {score.toFixed(2)}</span>
-                      <ActivityCard a={item} refNo={i + 1} onDraft={onDraft} />
+                      <ActivityCard a={item} refNo={i + 1} onDraft={onDraft} prefs={t.a.parsed.conditions.prefs} />
                     </div>
                   ))}
                 </div>

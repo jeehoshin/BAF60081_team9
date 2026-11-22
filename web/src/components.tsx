@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import type { Activity } from "./types";
+import type { Activity, Pref } from "./types";
 import { SOURCE_LABEL, fmtAge, fmtCost, fmtPeriod, fmtRuntime } from "./filters";
+import { PREF_LABEL, evidenceFor } from "./prefs";
 
 const TYPE_ICON: Record<string, string> = { 공연: "🎭", 축제: "🎪", 전시: "🖼️", 러닝: "🏃" };
 
-export function ActivityCard({ a, onDraft, refNo }: { a: Activity; onDraft?: (a: Activity) => void; refNo?: number }) {
+export function ActivityCard({ a, onDraft, refNo, prefs }: { a: Activity; onDraft?: (a: Activity) => void; refNo?: number; prefs?: Pref[] }) {
   const [imgOk, setImgOk] = useState(Boolean(a.image_url));
   const age = fmtAge(a);
   const runtime = fmtRuntime(a);
@@ -29,6 +30,7 @@ export function ActivityCard({ a, onDraft, refNo }: { a: Activity; onDraft?: (a:
         <p className="meta">📅 {fmtPeriod(a)}</p>
         <p className="meta">📍 {a.place ?? "장소 정보 없음"}</p>
         <p className="meta">💳 {fmtCost(a)}</p>
+        {prefs && prefs.length > 0 && <EvidenceList a={a} prefs={prefs} />}
         <div className="card-foot">
           <span className="src" title="데이터 출처">
             출처 · {SOURCE_LABEL[a.source] ?? a.source}
@@ -48,6 +50,52 @@ export function ActivityCard({ a, onDraft, refNo }: { a: Activity; onDraft?: (a:
         </div>
       </div>
     </article>
+  );
+}
+
+// 선호(아이랑·실내…)마다 이 행사에서 찾은 근거. ✅ 데이터 · 🔎 추정(문구 그대로) · ❔ 정보 없음
+function EvidenceList({ a, prefs }: { a: Activity; prefs: Pref[] }) {
+  const [reported, setReported] = useState<Pref[]>([]);
+  return (
+    <ul className="evid" aria-label="선호 조건 근거">
+      {prefs.map((p) => {
+        const e = evidenceFor(a, p);
+        const label = PREF_LABEL[p];
+        if (e.level === "data") {
+          return (
+            <li key={p} className={e.ok ? "ev-data" : "ev-against"}>
+              <b>{e.ok ? "✅" : "⛔"} {label}</b> {e.text}
+            </li>
+          );
+        }
+        if (e.level === "none") {
+          return (
+            <li key={p} className="ev-none">
+              <b>❔ {label}</b> 정보 없음 · 원문에서 확인해 주세요
+            </li>
+          );
+        }
+        return (
+          <li key={p} className="ev-guess">
+            <b>🔎 {label}</b> {e.text} <span className="ev-from">({e.from} · AI 추정)</span>
+            {e.quote && (
+              <q>
+                {e.quote[0]}
+                <mark>{e.quote[1]}</mark>
+                {e.quote[2]}
+              </q>
+            )}
+            {reported.includes(p) ? (
+              <span className="ev-thanks">알려 줘서 고마워요. 태그 개선 기록에 남겨요.</span>
+            ) : (
+              <button className="ev-report" onClick={() => setReported((r) => [...r, p])}>
+                근거가 틀렸어요
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
