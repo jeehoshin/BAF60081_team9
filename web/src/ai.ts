@@ -7,7 +7,7 @@
 // 행사 자체는 지어내지 않고 항상 공공 API에서 받은 실제 데이터에서만 고른다.
 // ─────────────────────────────────────────────────────────────
 import type { Activity, Conditions, DatePreset, Parsed } from "./types";
-import { DAEJEON_GU, SEOUL_GU, applyConditions, cityOf, fmtCost, fmtPeriod } from "./filters";
+import { DAEJEON_GU, SEOUL_GU, applyConditions, cityOf, fmtAge, fmtCost, fmtPeriod, fmtRuntime } from "./filters";
 
 const ALL_GU = Array.from(new Set([...SEOUL_GU, ...DAEJEON_GU])).sort((a, b) => b.length - a.length);
 
@@ -19,7 +19,8 @@ const TYPE_RULES: [string, RegExp][] = [
 ];
 
 // 알아들었지만 지금 데이터에 칸이 없어 반영할 수 없는 말. 숨기지 않고 화면에 알린다.
-const UNSUPPORTED = /(아이랑|아이와|아이들|가족|데이트|커플|혼자|조용한|야외|실내|반려견|강아지|부모님|친구랑|친구와|주차)/g;
+// ('아이랑·가족·유아' 등은 KOPIS 관람연령 min_age_months 수집이 추가되어 이제 실제 조건 필터로 반영된다)
+const UNSUPPORTED = /(데이트|커플|혼자|조용한|야외|실내|반려견|강아지|부모님|친구랑|친구와|주차)/g;
 
 export function parseQuery(text: string): Parsed {
   const t = text.trim();
@@ -56,8 +57,31 @@ export function parseQuery(text: string): Parsed {
   if (man) c.maxCost = Math.round(parseFloat(man[1]) * 10000);
   else if (won) c.maxCost = parseInt(won[1].replace(/,/g, ""), 10);
 
+  // 관람연령 (min_age_months <= ageMonths)
+  const ageMo = t.match(/(\d+)\s*개월/);
+  const ageYr = t.match(/(\d+)\s*세/);
+  if (/전체\s*관람가?/.test(t)) c.ageMonths = 0;
+  else if (ageMo) c.ageMonths = parseInt(ageMo[1], 10);
+  else if (ageYr) c.ageMonths = parseInt(ageYr[1], 10) * 12;
+  else if (/(유아|아기)/.test(t)) c.ageMonths = 36;
+  else if (/(아이랑|아이와|아이들|어린이|초등|가족)/.test(t)) c.ageMonths = 84;
+
+  // 러닝타임 (runtime_min <= maxRuntime)
+  const runMin = t.match(/(\d+)\s*분\s*(?:이하|이내|안쪽|미만)/) ?? t.match(/러닝타임\s*(\d+)\s*분/);
+  const runHr = t.match(/(\d+)\s*시간\s*(?:이하|이내|안쪽|미만)/);
+  if (/1시간\s*반\s*(?:이하|이내|안쪽|미만)?/.test(t)) c.maxRuntime = 90;
+  else if (runMin) c.maxRuntime = parseInt(runMin[1], 10);
+  else if (runHr) c.maxRuntime = parseInt(runHr[1], 10) * 60;
+
   const ignored = Array.from(new Set(t.match(UNSUPPORTED) ?? []));
-  const known = [c.city || c.region, c.type, c.date, c.free || c.maxCost !== undefined].filter(Boolean).length;
+  const known = [
+    c.city || c.region,
+    c.type,
+    c.date,
+    c.free || c.maxCost !== undefined,
+    c.ageMonths !== undefined,
+    c.maxRuntime !== undefined,
+  ].filter(Boolean).length;
   let confidence = known === 0 ? 0.35 : known === 1 ? 0.7 : 0.92;
   if (ignored.length) confidence -= 0.1;
 
@@ -74,6 +98,8 @@ export function toSchemaJson(p: Parsed) {
     date_preset: c.date ?? null,
     max_cost: c.maxCost ?? null,
     free_only: c.free ?? false,
+    age_months: c.ageMonths ?? null,
+    max_runtime: c.maxRuntime ?? null,
     unsupported_preferences: p.ignored,
     confidence: p.confidence,
   };
@@ -137,10 +163,13 @@ export function answerWithRag(question: string, items: Activity[]): RagAnswer {
   const sources = scored.map((s, i) => ({ item: s.item, score: Math.round((0.62 + 0.33 * (s.score / max) - i * 0.03) * 100) / 100 }));
   const sentences: Sentence[] = [
     { text: `조건에 맞는 행사 중 근거를 확인한 ${sources.length}곳을 골랐어요.`, refs: [] },
-    ...sources.map(({ item }, i) => ({
-      text: `「${item.title}」은(는) ${item.place ?? item.region ?? "장소 미정"}에서 ${fmtPeriod(item)}에 열리고, 가격은 ${fmtCost(item)}이에요.`,
-      refs: [i + 1],
-    })),
+    ...sources.map(({ item }, i) => {
+      const meta = [fmtAge(item), fmtRuntime(item) ? `러닝타임 ${fmtRuntime(item)}` : null].filter(Boolean).join(" · ");
+      return {
+        text: `「${item.title}」은(는) ${item.place ?? item.region ?? "장소 미정"}에서 ${fmtPeriod(item)}에 열리고, 가격은 ${fmtCost(item)}${meta ? ` (${meta})` : ""}이에요.`,
+        refs: [i + 1],
+      };
+    }),
     { text: "시간과 가격은 바뀔 수 있으니 가기 전에 원문에서 한 번 더 확인해 주세요.", refs: [] },
   ];
   return { sentences, sources, noEvidence: false, parsed };

@@ -1,17 +1,26 @@
 import { useRef, useState } from "react";
 import type { Activity, City, Conditions, DatePreset, DemoMode, Parsed } from "../types";
 import { parseQuery, toSchemaJson, wait } from "../ai";
-import { DATE_LABEL, applyConditions, relaxOptions } from "../filters";
+import { DATE_LABEL, applyConditions, fmtAgeCond, relaxOptions } from "../filters";
 import { ActivityCard, ErrorBox, Proto, StepLoader, type ErrorKind } from "../components";
 
-const EXAMPLES = ["이번 주말 서울 공연", "서울 3만원 이하 공연", "이번 주말 서울 무료 축제", "아이랑 갈 만한 곳"];
+const EXAMPLES = ["이번 주말 서울 공연", "서울 3만원 이하 공연", "아이랑 볼 90분 이하 공연", "주차 편한 실내 데이트"];
 const STEPS = ["문장 이해하기", "조건에 맞는 행사 찾기", "결과 정리하기"];
 const PAGE = 12;
 
 type Phase = "idle" | "loading" | "confirm" | "error" | "done";
 
 function countRecognized(c: Conditions) {
-  return [c.city, c.region, c.type, c.date, c.free ? "free" : undefined, c.maxCost !== undefined ? "cost" : undefined].filter(Boolean).length;
+  return [
+    c.city,
+    c.region,
+    c.type,
+    c.date,
+    c.free ? "free" : undefined,
+    c.maxCost !== undefined ? "cost" : undefined,
+    c.ageMonths !== undefined ? "age" : undefined,
+    c.maxRuntime !== undefined ? "run" : undefined,
+  ].filter(Boolean).length;
 }
 
 export default function Search({ items, demo, onDraft }: { items: Activity[]; demo: DemoMode; onDraft: (a: Activity) => void }) {
@@ -101,7 +110,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
         <h1>
           말로 찾는 <em>이번 주 활동</em>
         </h1>
-        <p className="lead">평소 말하듯 적으면 AI가 날짜·지역·유형·가격 조건으로 바꿔서 공공 데이터에서 찾아 줘요.</p>
+        <p className="lead">평소 말하듯 적으면 AI가 날짜·지역·유형·가격·관람연령·러닝타임 조건으로 바꿔서 공공 데이터에서 찾아 줘요.</p>
         <form
           className="searchbar"
           onSubmit={(e) => {
@@ -261,6 +270,19 @@ const PRICE_OPTS: [string, Conditions][] = [
   ["5만원 이하", { maxCost: 50000 }],
 ];
 
+const AGE_OPTS: [string, number][] = [
+  ["전체 관람가", 0],
+  ["36개월 관람 가능", 36],
+  ["만 7세(초등) 관람 가능", 84],
+  ["만 12세 관람 가능", 144],
+];
+
+const RUNTIME_OPTS: [string, number][] = [
+  ["60분 이하", 60],
+  ["90분 이하", 90],
+  ["120분 이하", 120],
+];
+
 function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Conditions) => void }) {
   const chips: { label: string; clear: Conditions }[] = [];
   if (cond.city) chips.push({ label: cond.city, clear: { ...cond, city: undefined, region: undefined } });
@@ -269,6 +291,8 @@ function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Cond
   if (cond.date) chips.push({ label: DATE_LABEL[cond.date], clear: { ...cond, date: undefined } });
   if (cond.free) chips.push({ label: "무료", clear: { ...cond, free: undefined } });
   if (cond.maxCost !== undefined) chips.push({ label: `${(cond.maxCost / 10000).toLocaleString("ko-KR")}만원 이하`, clear: { ...cond, maxCost: undefined } });
+  if (cond.ageMonths !== undefined) chips.push({ label: fmtAgeCond(cond.ageMonths), clear: { ...cond, ageMonths: undefined } });
+  if (cond.maxRuntime !== undefined) chips.push({ label: `${cond.maxRuntime}분 이하`, clear: { ...cond, maxRuntime: undefined } });
 
   return (
     <div className="chips">
@@ -306,12 +330,31 @@ function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Cond
           ))}
         </select>
       )}
-      {!cond.free && cond.maxCost !== undefined && null}
       {!cond.free && cond.maxCost === undefined && (
         <select aria-label="가격 추가" value="" onChange={(e) => onChange({ ...cond, ...PRICE_OPTS[Number(e.target.value)][1] })}>
           <option value="">+ 가격</option>
           {PRICE_OPTS.map(([label], i) => (
             <option key={label} value={i}>
+              {label}
+            </option>
+          ))}
+        </select>
+      )}
+      {cond.ageMonths === undefined && (
+        <select aria-label="관람연령 추가" value="" onChange={(e) => onChange({ ...cond, ageMonths: Number(e.target.value) })}>
+          <option value="">+ 관람연령</option>
+          {AGE_OPTS.map(([label, m]) => (
+            <option key={m} value={m}>
+              {label}
+            </option>
+          ))}
+        </select>
+      )}
+      {cond.maxRuntime === undefined && (
+        <select aria-label="러닝타임 추가" value="" onChange={(e) => onChange({ ...cond, maxRuntime: Number(e.target.value) })}>
+          <option value="">+ 러닝타임</option>
+          {RUNTIME_OPTS.map(([label, m]) => (
+            <option key={m} value={m}>
               {label}
             </option>
           ))}

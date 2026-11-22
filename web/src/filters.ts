@@ -116,6 +116,12 @@ export function applyConditions(items: Activity[], c: Conditions, now = new Date
       if (c.free && m !== 0) return false;
       if (c.maxCost !== undefined && m > c.maxCost) return false;
     }
+    if (c.ageMonths !== undefined) {
+      if (a.min_age_months === null || a.min_age_months === undefined || a.min_age_months > c.ageMonths) return false;
+    }
+    if (c.maxRuntime !== undefined) {
+      if (a.runtime_min === null || a.runtime_min === undefined || a.runtime_min > c.maxRuntime) return false;
+    }
     return true;
   });
 }
@@ -127,6 +133,8 @@ export function relaxOptions(items: Activity[], c: Conditions): Relax[] {
   const tries: { label: string; next: Conditions }[] = [];
   if (c.free) tries.push({ label: "무료 조건 빼기", next: { ...c, free: undefined } });
   if (c.maxCost !== undefined) tries.push({ label: "가격 조건 빼기", next: { ...c, maxCost: undefined } });
+  if (c.ageMonths !== undefined) tries.push({ label: "관람연령 조건 빼기", next: { ...c, ageMonths: undefined } });
+  if (c.maxRuntime !== undefined) tries.push({ label: "러닝타임 조건 빼기", next: { ...c, maxRuntime: undefined } });
   if (c.date && c.date !== "month") tries.push({ label: `${DATE_LABEL[c.date]} → 이번 달`, next: { ...c, date: "month" } });
   if (c.date) tries.push({ label: "날짜 조건 빼기", next: { ...c, date: undefined } });
   if (c.region) tries.push({ label: `${c.region} → ${c.city ?? cityOf(c.region) ?? "전체"} 전체`, next: { ...c, region: undefined } });
@@ -162,6 +170,26 @@ export function fmtCost(a: Activity) {
   if (m === null) return "가격 정보 없음";
   if (m === 0) return "무료";
   return `${m.toLocaleString("ko-KR")}원부터`;
+}
+
+export function fmtAge(a: Activity): string | null {
+  const m = a.min_age_months;
+  if (m === null || m === undefined) return null;
+  if (m === 0) return "전체 관람가";
+  if (m < 48 || m % 12 !== 0) return `${m}개월 이상`;
+  return `만 ${m / 12}세 이상`;
+}
+
+export function fmtAgeCond(months: number): string {
+  if (months === 0) return "전체 관람가";
+  if (months < 48 || months % 12 !== 0) return `${months}개월 관람 가능`;
+  return `만 ${months / 12}세(초등) 관람 가능`;
+}
+
+export function fmtRuntime(a: Activity): string | null {
+  const r = a.runtime_min;
+  if (!r) return null;
+  return `${r}분`;
 }
 
 export const SOURCE_LABEL: Record<string, string> = {

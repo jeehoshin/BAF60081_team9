@@ -13,6 +13,8 @@ export type Activity = {
   source_url: string | null;
   image_url: string | null;
   lat?: number | null;
+  min_age_months?: number | null; // 관람 가능 최소 나이(개월). 전체 관람가 0, 모르면 null
+  runtime_min?: number | null; // 러닝타임(분)
 };
 
 export type City = "서울" | "대전";
@@ -26,6 +28,8 @@ export type Conditions = {
   date?: DatePreset;
   maxCost?: number;
   free?: boolean;
+  ageMonths?: number; // 이 나이(개월)인 사람도 볼 수 있는 행사만 (min_age_months <= ageMonths)
+  maxRuntime?: number; // 러닝타임이 이 분 이하인 행사만 (runtime_min <= maxRuntime)
 };
 
 export type Parsed = {

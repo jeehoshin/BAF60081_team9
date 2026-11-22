@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import type { Activity } from "./types";
-import { SOURCE_LABEL, fmtCost, fmtPeriod } from "./filters";
+import { SOURCE_LABEL, fmtAge, fmtCost, fmtPeriod, fmtRuntime } from "./filters";
 
 const TYPE_ICON: Record<string, string> = { 공연: "🎭", 축제: "🎪", 전시: "🖼️", 러닝: "🏃" };
 
 export function ActivityCard({ a, onDraft, refNo }: { a: Activity; onDraft?: (a: Activity) => void; refNo?: number }) {
   const [imgOk, setImgOk] = useState(Boolean(a.image_url));
+  const age = fmtAge(a);
+  const runtime = fmtRuntime(a);
   return (
     <article className="card">
       <div className="thumb">
@@ -20,6 +22,8 @@ export function ActivityCard({ a, onDraft, refNo }: { a: Activity; onDraft?: (a:
         <div className="card-tags">
           <span className={`tag t-${a.activity_type}`}>{a.activity_type}</span>
           {a.region && <span className="tag">{a.region}</span>}
+          {age && <span className="tag">{age}</span>}
+          {runtime && <span className="tag">⏱️ {runtime}</span>}
         </div>
         <h3>{a.title}</h3>
         <p className="meta">📅 {fmtPeriod(a)}</p>
