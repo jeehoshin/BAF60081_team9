@@ -47,7 +47,7 @@ export function ActivityCard({ a, onDraft, refNo }: { a: Activity; onDraft?: (a:
   );
 }
 
-// 단계가 보이는 로딩. 기다리는 이유를 알려 주면 같은 시간도 덜 답답하다.
+// 단계가 보이는 로딩 + 실제 카드 골격을 닮은 Skeleton Screen (ux-loading.js)
 export function StepLoader({ steps, current, slow, onCancel }: { steps: string[]; current: number; slow: boolean; onCancel?: () => void }) {
   const [late, setLate] = useState(false);
   useEffect(() => {
@@ -67,7 +67,7 @@ export function StepLoader({ steps, current, slow, onCancel }: { steps: string[]
       </ol>
       {slow && late && (
         <p className="late">
-          평소보다 오래 걸리고 있어요. AI 서버가 바쁜 것 같아요.
+          ⏳ 평소보다 오래 걸리고 있어요. 무료 AI 서버가 깨어나는 중이거나 요청이 몰렸을 수 있어요.
           {onCancel && (
             <button className="btn-ghost sm" onClick={onCancel}>
               그만 기다리고 직접 고르기
@@ -75,9 +75,16 @@ export function StepLoader({ steps, current, slow, onCancel }: { steps: string[]
           )}
         </p>
       )}
-      <div className="skeletons">
+      <div className="skeletons" aria-hidden="true">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="skeleton" />
+          <div key={i} className="skel-card">
+            <div className="skeleton skel-thumb" />
+            <div className="skel-body">
+              <div className="skeleton skel-tag" />
+              <div className="skeleton skel-title" />
+              <div className="skeleton skel-meta" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -90,12 +97,12 @@ export function ErrorBox({ kind, onRetry, onFallback, fallbackLabel }: { kind: E
   const msg =
     kind === "rate_limit"
       ? {
-          title: "지금 AI 요청이 몰렸어요 (429)",
-          body: "잠시 쉬었다가 다시 시도하거나, AI 없이 조건을 직접 골라 바로 찾을 수 있어요. 입력한 문장은 그대로 남아 있어요.",
+          title: "지금 AI 요청 한도에 도달했어요 (HTTP 429 · Rate Limit)",
+          body: "무료 등급 분당 요청 상한에 걸렸어요. 약 30~60초 뒤 다시 시도하거나, AI 없이 조건을 직접 골라 바로 찾을 수 있어요. 입력하신 질문은 지워지지 않고 그대로 남아 있어요.",
         }
       : {
-          title: "AI 서버에 연결하지 못했어요",
-          body: "무료 서버가 잠들어 있으면 깨어나는 데 1분쯤 걸려요. 기다리는 동안 AI 없이 찾아볼 수 있어요.",
+          title: "AI 서버에 연결하지 못했어요 (Connection / Cold Start)",
+          body: "무료 클라우드 서버(Render)가 잠들어 있으면 깨어나는 데 최대 1분쯤 걸려요. 기다리는 동안 AI 없이 조건 필터로 바로 찾아볼 수 있어요.",
         };
   return (
     <div className="state error" role="alert">

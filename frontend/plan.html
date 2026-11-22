@@ -3,57 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>1조 같이 갈래? · 5주차 아이디어 공유</title>
+<title>1조 같이 갈래? · 5주차 아이디어·UI 프로토타입 공유</title>
 <link rel="icon" href="mascot.svg">
 <link rel="stylesheet" href="styles.css">
 <style>
   /* 5주차 아이디어·UI 공유 페이지. 한 섹션 = 발표 1분 안팎, 맨 위에 시간과 핵심 한 줄 */
-  .wrap { max-width: 1040px; }
-  .head { padding: 26px 0 10px; }
-  .eyebrow { font-size: 0.8rem; font-weight: 800; color: var(--kaist); letter-spacing: 0.02em; }
-  .head h1 { font-family: var(--display); font-weight: 400; font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.2; margin: 6px 0 10px; }
+  .wrap { max-width: 1080px; }
+  .head { padding: 28px 0 12px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 800; color: var(--kaist); background: rgba(255,255,255,0.85); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; letter-spacing: 0.02em; }
+  .head h1 { font-family: var(--display); font-weight: 400; font-size: clamp(1.95rem, 5vw, 2.85rem); line-height: 1.22; margin: 10px 0; }
   .head h1 span { color: var(--kaist); }
-  .head p { color: var(--muted); max-width: 760px; margin: 0; }
-  .team { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .team span { font-size: 0.8rem; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; color: var(--muted); }
-  .team b { color: var(--ink); }
-  .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 18px 0 8px; }
-  .links a { display: grid; gap: 2px; background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; color: var(--ink); }
-  .links a:hover { border-color: var(--kaist); text-decoration: none; }
-  .links a.main { background: var(--kaist); border-color: var(--kaist); color: #fff; }
-  .links small { font-size: 0.72rem; font-weight: 800; opacity: 0.75; }
-  .links code { font-size: 0.76rem; word-break: break-all; background: none; padding: 0; color: inherit; opacity: 0.85; }
-  .toc { position: sticky; top: 0; z-index: 20; display: flex; gap: 6px; flex-wrap: wrap; background: rgba(255,255,255,0.94); backdrop-filter: blur(8px); border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 10px; margin: 14px 0 6px; }
-  .toc a { font-size: 0.8rem; font-weight: 800; color: var(--muted); border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 10px; }
+  .head p { color: var(--muted); max-width: 820px; margin: 0; line-height: 1.65; }
+  .team { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .team span { font-size: 0.82rem; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--muted); box-shadow: 0 2px 6px rgba(26,39,68,0.04); }
+  .team span.role-lead { background: var(--sky-2); border-color: var(--kaist); color: var(--kaist-deep); font-weight: 800; }
+  .team b { color: var(--ink); margin-right: 3px; }
+  .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 18px 0 10px; }
+  .links a { display: grid; gap: 3px; background: rgba(255,255,255,0.92); border: 1.5px solid var(--line); border-radius: 16px; padding: 13px 15px; color: var(--ink); transition: transform 0.14s, border-color 0.14s, box-shadow 0.14s; }
+  .links a:hover { border-color: var(--kaist); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(31,95,214,0.1); text-decoration: none; }
+  .links a.main { background: linear-gradient(135deg, var(--kaist), var(--kaist-deep)); border-color: var(--kaist); color: #fff; box-shadow: 0 10px 24px rgba(31,95,214,0.22); }
+  .links a.accent-proto { border-color: var(--kaist); background: linear-gradient(180deg, #fff, var(--sky-2)); }
+  .links small { font-size: 0.72rem; font-weight: 800; opacity: 0.78; }
+  .links code { font-size: 0.75rem; word-break: break-all; background: none; padding: 0; color: inherit; opacity: 0.85; }
+  .toc { position: sticky; top: 0; z-index: 20; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 12px; margin: 14px 0 8px; box-shadow: 0 6px 18px rgba(26,39,68,0.06); }
+  .toc-links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toc a { font-size: 0.8rem; font-weight: 800; color: var(--muted); border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 11px; transition: all 0.12s; }
   .toc a:hover { color: var(--kaist); border-color: var(--kaist); text-decoration: none; }
-  section.sec { background: rgba(255,255,255,0.86); border: 1.5px solid var(--line); border-radius: 20px; padding: 20px 22px; margin: 16px 0; scroll-margin-top: 70px; }
+  .toc a.cta-proto { background: var(--kaist); border-color: var(--kaist); color: #fff; }
+  section.sec { background: rgba(255,255,255,0.88); backdrop-filter: blur(8px); border: 1.5px solid var(--line); border-radius: 20px; padding: 22px 24px; margin: 16px 0; scroll-margin-top: 74px; box-shadow: 0 8px 24px rgba(26,39,68,0.04); }
   .sec-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .sec-head h2 { margin: 0; font-size: 1.3rem; display: flex; gap: 10px; align-items: center; }
+  .sec-head h2 { margin: 0; font-size: 1.32rem; display: flex; gap: 10px; align-items: center; }
   .num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--kaist); color: #fff; font-size: 0.85rem; }
-  .time { font-size: 0.75rem; font-weight: 800; color: var(--bun-deep); background: #fff6e5; border-radius: 999px; padding: 3px 10px; }
-  .key { background: var(--sky-2); border-left: 5px solid var(--kaist); border-radius: 0 12px 12px 0; padding: 10px 14px; margin: 12px 0; font-weight: 700; line-height: 1.6; }
+  .time { font-size: 0.76rem; font-weight: 800; color: var(--bun-deep); background: #fff6e5; border: 1px solid #f3d9a4; border-radius: 999px; padding: 3px 10px; }
+  .key { background: var(--sky-2); border-left: 5px solid var(--kaist); border-radius: 0 12px 12px 0; padding: 11px 15px; margin: 12px 0; font-weight: 700; line-height: 1.6; }
   .g3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
-  .box { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 13px 15px; }
-  .box h3 { margin: 0 0 6px; font-size: 1rem; }
+  .g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  .box { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .box h3 { margin: 0 0 6px; font-size: 1rem; display: flex; align-items: center; gap: 6px; }
   .box p, .box ul { margin: 0; font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
   .box ul { padding-left: 18px; }
-  .box.accent { border-color: var(--kaist); }
-  table.t { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: #fff; border-radius: 12px; overflow: hidden; margin-top: 12px; }
-  table.t th, table.t td { border-bottom: 1px solid var(--line); padding: 9px 11px; text-align: left; vertical-align: top; line-height: 1.55; }
-  table.t th { background: var(--sky-2); white-space: nowrap; }
+  .box li + li { margin-top: 3px; }
+  .box.accent { border-color: var(--kaist); background: linear-gradient(180deg, #fff, #f8fbff); }
+  .sub-title { font-size: 0.95rem; font-weight: 800; color: var(--ink); margin: 16px 0 8px; display: flex; align-items: center; gap: 6px; }
+  .pill-tag { display: inline-block; font-size: 0.72rem; font-weight: 800; background: var(--sky-2); color: var(--kaist); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 0.88rem; background: #fff; border-radius: 12px; overflow: hidden; margin-top: 10px; border: 1px solid var(--line); }
+  table.t th, table.t td { border-bottom: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; line-height: 1.55; }
+  table.t th { background: var(--sky-2); white-space: nowrap; font-weight: 800; }
   table.t td:first-child { font-weight: 800; white-space: nowrap; }
   .tw { overflow-x: auto; }
   .stat { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-  .stat div { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; min-width: 130px; }
-  .stat b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.8rem; color: var(--kaist); line-height: 1.2; }
+  .stat div { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; min-width: 130px; flex: 1; }
+  .stat b { display: block; font-family: var(--display); font-weight: 400; font-size: 1.85rem; color: var(--kaist); line-height: 1.2; }
   .stat small { color: var(--muted); font-size: 0.78rem; }
   .stat .warn b { color: var(--danger); }
-  ol.demo { margin: 12px 0 0; padding-left: 22px; line-height: 1.8; }
+  ol.demo { margin: 12px 0 0; padding-left: 22px; line-height: 1.85; font-size: 0.92rem; }
   ol.demo b { color: var(--kaist); }
-  .states { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
-  .states div { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 11px 13px; font-size: 0.86rem; color: var(--muted); }
-  .states b { display: block; color: var(--ink); margin-bottom: 2px; }
-  .note { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+  .states { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 12px; }
+  .states div { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px; font-size: 0.86rem; color: var(--muted); line-height: 1.55; }
+  .states b { display: block; color: var(--ink); margin-bottom: 3px; font-size: 0.92rem; }
+  .note { font-size: 0.8rem; color: var(--muted); margin-top: 10px; line-height: 1.6; }
   @media (max-width: 560px) { section.sec { padding: 16px; } }
 </style>
 </head>
@@ -62,120 +70,149 @@
 
   <header class="head">
     <div class="eyebrow">BAF60086 금융빅데이터분석실습 · 1조 · 5주차 아이디어·UI 프로토타입 공유</div>
-    <h1>이번 주말 뭐 하지?<br><span>말로 물으면 AI가 찾아 주는</span> 같이 갈래?</h1>
-    <p>클라우드컴퓨팅실습에서 모은 공연·축제·전시 공공 데이터 위에, 한 문장 검색 · 출처 달린 답변 · 모임 글 초안이라는 AI 기능 세 가지를 얹습니다. 기능보다 먼저 <b>AI가 틀리거나 느리거나 결과가 없을 때 화면이 어떻게 반응하는지</b>를 설계했습니다.</p>
+    <h1>이번 주말 뭐 하지?<br><span>말로 물으면 근거와 함께 찾아 주는</span> 같이 갈래?</h1>
+    <p>선행 과목(클라우드컴퓨팅실습)에서 구축한 공연·축제·전시 공공 데이터 파이프라인(KOPIS·한국관광공사·한국문화정보원) 위에, <b>① 한 문장 조건 검색 · ② 출처 번호가 달린 pgvector RAG 동행 플래너 · ③ 사람 승인(Human-in-the-Loop) 모임 초안</b>을 React로 통합합니다. 기술의 화려함보다 <b>AI가 틀리거나 느리거나 결과가 없을 때 사용자가 통제하고 복구할 수 있는 UI/UX</b>를 먼저 설계했습니다.</p>
     <div class="team">
-      <span>역할 · 확정 전 (지난 과목 역할 기준)</span>
-      <span><b>지호</b> 프론트·배포</span>
-      <span><b>영선</b> 외부 API</span>
-      <span><b>찬휘</b> 기획</span>
-      <span><b>한룡</b> 역할 미정</span>
-      <span><b>한솔</b> 역할 미정</span>
+      <span class="role-lead">1조 팀원 및 역할</span>
+      <span><b>지호</b> 프론트엔드(React) · 클라우드 배포</span>
+      <span><b>영선</b> 공공 API 파이프라인 · 데이터 수집</span>
+      <span><b>찬휘</b> 서비스 기획 · 프롬프트 엔지니어링</span>
+      <span><b>한룡</b> RAG(pgvector) · 텍스트 분석(TF-IDF/임베딩)</span>
+      <span><b>한솔</b> AI 응답 검증 · UI/UX 사용성 · 발표/시연</span>
     </div>
   </header>
 
   <div class="links">
-    <a class="main" href="https://github.com/jeehoshin/BAF60081_team9" target="_blank" rel="noreferrer"><small>① GITHUB 저장소</small><b>코드 · 문서</b><code>github.com/jeehoshin/BAF60081_team9</code></a>
-    <a href="https://baf60081team9-frontend.vercel.app/" target="_blank" rel="noreferrer"><small>② 서비스 (지난 과목 결과물)</small><b>같이 갈래?</b><code>baf60081team9-frontend.vercel.app</code></a>
-    <a href="https://baf60081-team9.onrender.com/docs" target="_blank" rel="noreferrer"><small>③ SWAGGER UI</small><b>백엔드 API</b><code>baf60081-team9.onrender.com/docs</code></a>
-    <a href="https://baf-60086-team1.vercel.app/" target="_blank" rel="noreferrer"><small>④ AI UI 프로토타입 (React)</small><b>같이 갈래? AI</b><code>baf-60086-team1.vercel.app</code></a>
+    <a class="main" href="https://baf-60086-team1.vercel.app/" target="_blank" rel="noreferrer"><small>① AI UI 프로토타입 (React · 신규)</small><b>같이 갈래? AI 시연 ↗</b><code>baf-60086-team1.vercel.app</code></a>
+    <a class="accent-proto" href="https://github.com/jeehoshin/BAF60081_team9" target="_blank" rel="noreferrer"><small>② GITHUB 저장소 (필수 주소 1)</small><b>소스 코드 · 프롬프트 · 문서</b><code>github.com/jeehoshin/BAF60081_team9</code></a>
+    <a href="https://baf60081team9-frontend.vercel.app/stats.html" target="_blank" rel="noreferrer"><small>③ 서비스 웹 &amp; 분석 페이지 (필수 주소 2)</small><b>같이 갈래? &amp; 데이터 분석</b><code>baf60081team9-frontend.vercel.app</code></a>
+    <a href="https://baf60081-team9.onrender.com/docs" target="_blank" rel="noreferrer"><small>④ SWAGGER UI (필수 주소 3)</small><b>FastAPI 백엔드 API 테스트</b><code>baf60081-team9.onrender.com/docs</code></a>
   </div>
 
   <nav class="toc" aria-label="섹션">
-    <a href="#s1">1 사용자·문제</a><a href="#s2">2 무엇이 바뀌나</a><a href="#s3">3 데이터</a><a href="#s4">4 AI 계획</a><a href="#s5">5 UI 프로토타입</a><a href="#s6">6 일정·리스크</a>
+    <div class="toc-links">
+      <a href="#s1">1 사용자·문제·차별화</a>
+      <a href="#s2">2 선행 과목과의 연계</a>
+      <a href="#s3">3 데이터·텍스트 분석</a>
+      <a href="#s4">4 LLM·RAG·검증 설계</a>
+      <a href="#s5">5 AI-UX &amp; 프로토타입 시연</a>
+      <a href="#s6">6 일정·리스크 관리</a>
+    </div>
+    <a class="cta-proto" href="https://baf-60086-team1.vercel.app/" target="_blank" rel="noreferrer">🚀 React 프로토타입 열기</a>
   </nav>
 
   <section class="sec" id="s1">
-    <div class="sec-head"><h2><span class="num">1</span>대상 사용자와 문제</h2><span class="time">0:00 – 0:50</span></div>
-    <p class="key">"이번 주말 종로에서 3만 원 이하로 볼 연극"을 찾으려면 지금은 지역·유형·날짜를 하나씩 고른 뒤 가격은 카드마다 직접 읽어야 하고, 같이 갈 사람은 따로 구해야 합니다.</p>
+    <div class="sec-head"><h2><span class="num">1</span>대상 사용자·문제 정의 및 시장 차별화</h2><span class="time">0:00 – 0:55 · 평가 20%</span></div>
+    <p class="key">"이번 주말 종로에서 3만 원 이하로 볼 연극"을 찾으려면 지금은 지역·유형·날짜 드롭다운을 하나씩 고른 뒤 가격은 카드마다 직접 읽어야 하고, 같이 갈 사람은 별도 앱에서 빈 양식부터 써서 구해야 합니다.</p>
     <div class="g3">
-      <div class="box"><h3>👩‍💼 서연 · 32세 직장인</h3><p>금요일 밤에 주말 계획을 세웁니다. 원하는 건 머릿속에 문장으로 있는데, 사이트는 드롭다운 필터를 요구합니다.</p></div>
-      <div class="box"><h3>🧩 정보가 흩어져 있다</h3><p>공연은 KOPIS, 축제는 한국관광공사, 전시는 한국문화정보원. 지난 과목에서 세 곳을 한 DB로 모았습니다.</p></div>
-      <div class="box"><h3>🙋 같이 갈 사람이 없다</h3><p>행사마다 모임을 열 수 있지만, 이름·시간·소개를 빈칸에서부터 쓰는 건 번거롭습니다.</p></div>
+      <div class="box"><h3>👩‍💼 페르소나 · 서연 (32세 직장인)</h3><p>금요일 밤에 주말 계획을 세웁니다. 원하는 조건은 머릿속에 자연어 한 문장으로 있는데, 기존 사이트는 4~5단계의 드롭다운 필터 조합을 요구합니다.</p></div>
+      <div class="box"><h3>🧩 파편화된 정보와 탐색 피로</h3><p>공연은 KOPIS, 축제는 한국관광공사, 전시는 한국문화정보원에 흩어져 있습니다. 선행 과목에서 세 공공 API를 하나의 정제된 DB로 통합했습니다.</p></div>
+      <div class="box"><h3>🙋 동행 모집의 높은 진입장벽</h3><p>혼자 가기 아쉬워 모임을 열고 싶어도, 모임 제목·집결 시간·장소·소개글을 백지에서부터 작성하는 심리적·시간적 부담이 큽니다.</p></div>
     </div>
+
+    <div class="sub-title">📊 시장·경쟁 서비스 비교 및 우리 팀의 차별화 (Activity-First + 검증된 AI)</div>
+    <div class="tw"><table class="t">
+      <tr><th>구분</th><th>티켓 예매처 (인터파크·YES24 등)</th><th>소모임 앱 (문토·소모임·당근모임)</th><th>같이 갈래? AI (우리 팀 제안)</th></tr>
+      <tr><td>탐색 기준</td><td>공연 위주 · 복잡한 드롭다운/키워드 검색</td><td>친목 모임 중심 (People-First) · 실제 행사 데이터 부족</td><td><b>공공 데이터 3종 통합 (Activity-First) + 자연어 한 문장 검색</b></td></tr>
+      <tr><td>정보 신뢰성</td><td>공식 예매 정보이나 타 기관 축제·전시 미포함</td><td>호스트 수기 작성 (일정·가격 부정확 가능)</td><td><b>RAG 인라인 출처 번호 [1][2] + 원문 카드 대조로 환각 차단</b></td></tr>
+      <tr><td>모임 개설</td><td>동행 모집·채팅 기능 없음</td><td>호스트가 백지에서 제목·소개 직접 작성</td><td><b>행사 메타데이터 기반 AI 말투별 초안 + 사람 최종 승인</b></td></tr>
+    </table></div>
   </section>
 
   <section class="sec" id="s2">
-    <div class="sec-head"><h2><span class="num">2</span>지난 과목에서 무엇이 바뀌나</h2><span class="time">0:50 – 1:20</span></div>
-    <p class="key">데이터와 서버는 그대로 쓰고, 화면을 React로 옮기면서 그 위에 AI를 붙입니다.</p>
+    <div class="sec-head"><h2><span class="num">2</span>선행 과목(BAF60081)에서 무엇이 확장되나</h2><span class="time">0:55 – 1:25</span></div>
+    <p class="key">검증된 공공 데이터 수집 파이프라인과 FastAPI·Supabase 백엔드는 그대로 살리고, 사용자 화면을 React로 전환하면서 수업 1~7주차의 텍스트 분석·LLM·RAG·품질 통제 기술을 결합합니다.</p>
     <div class="tw"><table class="t">
-      <tr><th></th><th>클라우드컴퓨팅실습 (지금)</th><th>금융빅데이터분석실습 (이번)</th></tr>
-      <tr><td>찾기</td><td>도시·유형·날짜 필터를 하나씩 고름</td><td>한 문장으로 묻고, AI가 이해한 조건을 칩으로 보여 줌</td></tr>
-      <tr><td>알아보기</td><td>목록과 상세 화면</td><td>근거 자료 번호가 달린 답변 (RAG)</td></tr>
-      <tr><td>모임 열기</td><td>빈 양식</td><td>AI가 쓴 초안을 고치고, 사람이 확인해야 저장</td></tr>
-      <tr><td>화면</td><td>HTML · JS</td><td>React (Vite · TypeScript)</td></tr>
+      <tr><th>영역</th><th>클라우드컴퓨팅실습 (선행 결과물)</th><th>금융빅데이터분석실습 (이번 학기 고도화)</th><th>연계 수업 주차</th></tr>
+      <tr><td>프론트엔드</td><td>순수 HTML · CSS · Vanilla JS (`frontend/`)</td><td><b>React + TypeScript + Vite (`web/`)</b> · 컴포넌트/State 기반 비동기 상태 제어</td><td>1주차 React UI</td></tr>
+      <tr><td>탐색·분석</td><td>도시·유형·날짜 드롭다운 수동 필터 + 인구 대비 공급 통계</td><td><b>한 문장 조건 파싱(`/ai/parse`) + TF-IDF 키워드·임베딩 유사 행사 추천</b></td><td>2주차 텍스트 · 4주차 스키마</td></tr>
+      <tr><td>질의·응답</td><td>목록 및 상세 페이지 직접 열람</td><td><b>Supabase `pgvector` RAG 동행 플래너(`/ai/ask`) + 문장별 인라인 출처 `[1][2]`</b></td><td>3·5주차 LLM &amp; RAG</td></tr>
+      <tr><td>모임 개설</td><td>빈 입력 양식에 처음부터 수기 작성</td><td><b>행사 정보 기반 말투별 AI 초안(`/ai/draft`) + 사람 확인(Human-in-the-Loop) 저장</b></td><td>4·6·7주차 프롬프트 &amp; 품질</td></tr>
     </table></div>
   </section>
 
   <section class="sec" id="s3">
-    <div class="sec-head"><h2><span class="num">3</span>확보한 데이터와 분석 방향</h2><span class="time">1:20 – 2:00</span></div>
-    <p class="key">공공 API 3곳에서 모은 269건이 있습니다. 그런데 지금 볼 수 있는(끝나지 않은) 행사는 18건뿐이라, 수집을 주기적으로 돌리는 것이 첫 과제입니다.</p>
+    <div class="sec-head"><h2><span class="num">3</span>확보한 데이터와 텍스트·데이터 분석 방향</h2><span class="time">1:25 – 2:05 · 평가 10%</span></div>
+    <p class="key">공공 API 3곳에서 수집한 실제 행사 443건과 KOPIS 전국 공연 통계가 Supabase에 적재되어 있습니다. 10월 수집 당시 18건으로 줄어들었던 진행 중 행사를 Swagger <code>POST /collect</code> 재수집으로 190건까지 최신화했습니다.</p>
     <div class="stat">
-      <div><b>269</b><small>DB 전체 (11/19 기준)</small></div>
-      <div><b>132</b><small>KOPIS 공연</small></div>
-      <div><b>81</b><small>한국문화정보원 전시</small></div>
-      <div><b>54</b><small>한국관광공사 축제·행사</small></div>
-      <div class="warn"><b>18</b><small>아직 끝나지 않은 행사</small></div>
+      <div><b>443</b><small>Supabase 적재 행사 (11/22 기준)</small></div>
+      <div><b>219</b><small>KOPIS 공연</small></div>
+      <div><b>159</b><small>한국문화정보원 전시</small></div>
+      <div><b>63</b><small>한국관광공사 축제·행사</small></div>
+      <div><b>190</b><small>현재 볼 수 있는(끝나지 않은) 행사</small></div>
     </div>
     <div class="g3">
-      <div class="box"><h3>데이터 품질</h3><ul><li>예약 수집으로 매주 최신 행사 유지</li><li>출처 간 중복은 지난 과목 로직 재사용</li><li>모든 카드에 기관 출처 표시</li></ul></div>
-      <div class="box"><h3>텍스트 분석 (2주차)</h3><ul><li>행사 설명 TF-IDF → 취향 키워드</li><li>임베딩 유사도 → "비슷한 행사"</li><li>군집 → 장르 정리 (대표 문서로 해석)</li></ul></div>
-      <div class="box"><h3>지난 과목 분석 이어 쓰기</h3><ul><li>인구 10만 명당 공연 공급(서울·대전 격차)</li><li>공급이 적은 구에서 검색 결과가 없을 때 이웃 구 제안</li></ul></div>
+      <div class="box"><h3>🛡️ 데이터 품질 및 출처 관리</h3><ul><li>Swagger <code>POST /collect</code> 및 예약 수집으로 최신 행사 유지</li><li><code>external_id</code> 업서트 및 출처 간 중복 후보 탐지 로직 재사용</li><li>모든 카드·답변에 기관 출처 및 KOPIS 집계 기준 명시</li></ul></div>
+      <div class="box"><h3>📝 비정형 텍스트 분석 (2주차 적용)</h3><ul><li>행사 소개글·장르 텍스트 <b>형태소 분석 &amp; TF-IDF</b> → 핵심 취향 태그 추출</li><li><b>`Gemini Embedding 2` 코사인 유사도</b> → 상세 화면 "이 행사와 비슷한 행사" 추천</li><li>임베딩 군집화(Clustering)로 기관별 상이한 분류 체계 정렬</li></ul></div>
+      <div class="box"><h3>📈 공급 격차 분석의 서비스 연결</h3><ul><li>행정안전부 주민등록 인구 대비 구별·시도별 문화 공급 지수 산출 (<a href="stats.html">분석 페이지</a>)</li><li>공급이 적은 자치구에서 검색 결과가 0건일 때 데이터 기반으로 인근 공급 상위 구를 완화 제안</li></ul></div>
     </div>
   </section>
 
   <section class="sec" id="s4">
-    <div class="sec-head"><h2><span class="num">4</span>LLM · RAG · 에이전트 활용 계획</h2><span class="time">2:00 – 2:50</span></div>
-    <p class="key">AI가 틀릴 수 있다는 전제로, 기능마다 "틀렸을 때 사용자가 무엇을 보고 무엇을 할 수 있는지"를 같이 정했습니다.</p>
+    <div class="sec-head"><h2><span class="num">4</span>LLM · RAG · 에이전트 활용 및 오답 대응 설계</h2><span class="time">2:05 – 2:55 · 평가 30% + 10%</span></div>
+    <p class="key">"내용의 품질은 프롬프트(V0→V3)로, 형식과 허용 값은 스키마(Pydantic)로 통제한다"는 4주차 원칙에 따라, AI가 틀리거나 한도 초과(429)가 발생했을 때의 검증·복구 경로를 함께 설계했습니다.</p>
     <div class="tw"><table class="t">
-      <tr><th>기능</th><th>어떻게 (수업 주차)</th><th>틀리거나 실패했을 때</th></tr>
-      <tr><td>🔎 한 문장 검색</td><td>FastAPI <code>/ai/parse</code>가 LLM 구조화 출력으로 문장 → 조건 JSON. Pydantic으로 검증 (4주차)</td><td>이해한 조건을 칩으로 보여 주고 바로 수정 · 확신이 낮으면 먼저 확인 질문 · 데이터에 없는 조건(예: "아이랑")은 "반영 못함"으로 표시 · 검증 실패나 429면 일반 필터 검색으로 전환</td></tr>
-      <tr><td>🧭 AI 동행 플래너</td><td>행사 설명을 임베딩해 Supabase pgvector에 저장, 찾은 자료로만 답변 (5주차 RAG)</td><td>근거가 없으면 답변을 보류 · 답변 속 행사명·날짜·가격이 출처 카드에 있는지 코드로 대조 · 문장마다 출처 번호</td></tr>
-      <tr><td>✍️ 모임 초안</td><td>행사 정보 → 모임 이름·시간·소개 초안. 저장은 사람이 확인한 뒤 <code>POST /meetups</code> (4·7주차)</td><td>AI가 쓴 칸에 "AI 초안" 배지 · 확인 창에서 손대지 않은 칸 수를 알려 줌 · 정원 4~20명 등 서버 규칙으로 다시 검사</td></tr>
+      <tr><th>AI 기능 (엔드포인트)</th><th>구현 기술 및 수업 기법 (3~5주차)</th><th>오답·환각·오류 발생 시 검증 및 대응 설계 (Guardrail &amp; Fallback)</th></tr>
+      <tr><td>🔎 한 문장 조건 검색<br><code>POST /ai/parse</code></td><td>• 자연어 → 검색 조건 JSON 구조화 출력 (<code>response_format</code>)<br>• FastAPI <b>Pydantic 스키마</b>로 지역(서울 25구·대전 5구)·유형·날짜·가격 허용값 검증 (4주차)</td><td>• AI가 이해한 조건을 <b>편집 가능한 칩(Chip)</b>으로 시각화해 재호출 없이 ✕로 즉시 수정<br>• DB에 없는 조건("아이랑", "주차" 등)은 숨기지 않고 <b>"미반영 조건"</b>으로 명시<br>• 인식된 조건이 부족하면 바로 검색하지 않고 확인 질문 · 429/오류 시 수동 필터로 즉시 전환</td></tr>
+      <tr><td>🧭 AI 동행 플래너<br><code>POST /ai/ask</code></td><td>• 행사 제목·장소·기간·가격·설명을 청킹 후 <code>Gemini Embedding 2</code>로 벡터화해 <b>Supabase <code>pgvector</code></b> 검색 (5주차 RAG)<br>• 검색된 Top-3 문서만 구획 표지(<code>[자료]</code>)로 프롬프트에 주입</td><td>• <b>No-Evidence Abstain</b>: 유사도 임계값 미달 시 지어내지 않고 <b>"근거 없음 · 답변 보류"</b><br>• <b>인라인 출처 대조</b>: 문장마다 <code>[1][2]</code> 번호를 부여하고, 답변 속 행사명·날짜·가격이 실제 출처 카드와 일치하는지 서버 코드로 사후 검증</td></tr>
+      <tr><td>✍️ AI 모임 초안<br><code>POST /ai/draft</code></td><td>• 선택한 행사 메타데이터 + 말투(친근/간결/정중) 퓨샷(Few-shot) 프롬프트로 제목·시간·장소·소개 초안 생성 (4·7주차)</td><td>• <b>Human-in-the-Loop 승인</b>: AI는 초안만 생성하고 DB 저장(<code>POST /meetups</code>)은 사람이 확인 모달에서 승인해야 실행<br>• 각 입력 칸에 <code>AI 초안</code> / <code>직접 수정</code> 배지를 구분 표시하고, 미수정 칸 개수와 정원(4~20명)·종료일 이후 시간 여부를 인라인 검증</td></tr>
     </table></div>
-    <p class="note">모델: 수업 기본 Gemini Flash-Lite. 요청 한도에 걸리면 <code>.env</code>만 바꿔 Groq·로컬 모델로 전환 (4주차 OpenAI 호환 구조). 모임톡 대화 같은 개인 정보는 AI에 넣지 않습니다.</p>
+    <p class="note">⚙️ <b>비기능적 요구사항 (성능·보안·비용, 평가 10%)</b>: 4주차 OpenAI 호환 호출 구조(<code>.env</code>의 <code>LLM_BASE_URL</code>, <code>LLM_API_KEY</code>, <code>LLM_MODEL</code>, <code>LLM_REASONING</code> 4줄)를 적용해 배포는 <b>Gemini 3.5/3.8 Flash-Lite</b>로, 무료 한도(429) 도달 시 코드 수정 없이 <b>Groq(Qwen) 또는 로컬 Ollama(<code>qwen3.5:4b</code>)</b>로 즉시 전환합니다. API 키는 서버 <code>.env</code>에만 격리하며, 모임톡 대화나 개인정보는 LLM에 절대 전송하지 않습니다.</p>
   </section>
 
   <section class="sec" id="s5">
-    <div class="sec-head"><h2><span class="num">5</span>주요 화면 UI 프로토타입</h2><span class="time">2:50 – 5:00 · 시연</span></div>
-    <p class="key">클릭해 볼 수 있는 React 프로토타입입니다. 행사는 실제 공공 데이터이고, AI 응답만 시연용으로 흉내 냈습니다.</p>
+    <div class="sec-head"><h2><span class="num">5</span>UI/UX 설계 원칙 및 주요 화면 프로토타입 시연</h2><span class="time">2:55 – 5:10 · 시연 (평가 20%)</span></div>
+    <p class="key">수업 자료(<code>UIUX_용어집</code>)의 <b>AI 화면 설계(AI-UX) 12대 패턴</b>과 <b>비동기 상태(Loading·Empty·Error·Confirm)</b>를 실제 공공 데이터가 연결된 React 프로토타입에 모두 구현했습니다.</p>
+
     <div class="g3">
-      <div class="box accent"><h3>🔎 AI 검색</h3><p>한 문장 입력 → 단계별 로딩 → "AI가 이렇게 이해했어요" 조건 칩 → 결과 카드. 칩의 ✕로 AI를 다시 부르지 않고 고칩니다.</p></div>
-      <div class="box accent"><h3>🧭 AI 동행 플래너</h3><p>답변 문장마다 [1][2] 출처 번호. 누르면 근거 카드가 강조됩니다. 근거가 없으면 "답변 보류".</p></div>
-      <div class="box accent"><h3>✍️ 모임 초안</h3><p>말투를 골라 초안을 다시 쓰고, 고친 칸은 "직접 수정"으로 바뀝니다. 마지막 확인은 사람이 합니다.</p></div>
+      <div class="box accent">
+        <h3>🔎 1. AI 검색 (<a href="https://baf-60086-team1.vercel.app/#search" target="_blank" rel="noreferrer">#search ↗</a>)</h3>
+        <p><b>사실 기반 신뢰도 표시(<code>ai-confidence</code>)</b>: 모델이 자체 출력한 <code>confidence(92%)</code>는 실제 정답 확률이 아니므로, 화면에는 <b>"조건 N개 인식 · 근거 행사 M건"</b>처럼 검증 가능한 사실로 표시하고 JSON 뷰어에서 스키마 원문을 대조합니다.</p>
+      </div>
+      <div class="box accent">
+        <h3>🧭 2. AI 동행 플래너 (<a href="https://baf-60086-team1.vercel.app/#ask" target="_blank" rel="noreferrer">#ask ↗</a>)</h3>
+        <p><b>인라인 인용(<code>ai-citations</code>) &amp; 실행 단계(<code>ai-trace</code>)</b>: 문장마다 <code>[1][2]</code> 출처 번호를 눌러 근거 카드를 하이라이트하고, 실행 단계(Trace) 펼치기 및 다시 생성·복사·싫어요 사유 수집(<code>ai-feedback</code>)을 지원합니다.</p>
+      </div>
+      <div class="box accent">
+        <h3>✍️ 3. 모임 초안 (<a href="https://baf-60086-team1.vercel.app/#draft" target="_blank" rel="noreferrer">#draft ↗</a>)</h3>
+        <p><b>실행 전 사람 승인(<code>ai-approval</code>)</b>: 말투별 초안 생성 후 사용자가 수정한 칸은 <code>직접 수정</code> 배지로 즉시 바뀌며, 최종 확인 모달에서 손대지 않은 AI 초안 칸 수를 한 번 더 고지합니다.</p>
+      </div>
     </div>
+
     <div class="states">
-      <div><b>⏳ 로딩</b>"문장 이해 → 행사 찾기 → 정리" 단계 표시, 4초가 넘으면 "그만 기다리고 직접 고르기"</div>
-      <div><b>🔍 결과 없음</b>"무료 조건 빼기 9건"처럼 실제 건수가 붙은 완화 제안</div>
-      <div><b>🔌 오류 · 429</b>원인을 쉬운 말로 안내, 다시 시도 또는 AI 없이 찾기</div>
-      <div><b>🤔 확신 낮음</b>바로 찾지 않고 "이렇게 이해했는데 맞나요?"</div>
+      <div><b>⏳ 단계별 로딩 &amp; 스켈레톤</b>"문장 이해 → 행사 찾기 → 정리" 진행 단계와 카드형 스켈레톤 표시. 4초 초과 시 "그만 기다리고 직접 고르기" 탈출 버튼 제공</div>
+      <div><b>🔍 빈 결과 (Empty State)</b>단순히 "0건"만 띄우지 않고, <b>"무료 조건 빼기 9건"</b>처럼 실제 데이터로 계산한 조건 완화 버튼을 제시해 다음 행동 안내</div>
+      <div><b>🔌 429 한도 초과 &amp; 서버 오류</b>입력한 질문을 지우지 않고 보존하며, 쉬운 원인 안내와 함께 <b>"AI 없이 조건 직접 고르기(Fallback)"</b>로 서비스 중단 방지</div>
+      <div><b>🔒 AI 고지 &amp; 낮은 확신 확인</b>입력창 하단에 외부 모델 전송 및 개인정보 입력 금지 고지(<code>ai-disclosure</code>), 모호한 질문은 먼저 조건 확인</div>
     </div>
+
+    <div class="sub-title">🎬 발표 실시간 시연 시나리오 (2분 15초, 클릭 순서)</div>
     <ol class="demo">
-      <li><b>AI 검색</b> "이번 주말 서울 공연" → 조건 칩과 AI 응답 JSON → 칩 하나 빼서 결과가 바뀌는 것 보여 주기</li>
-      <li>"아이랑 갈 만한 곳" → 확신 낮음 확인 + "‘아이랑’은 반영하지 못했어요"</li>
-      <li>왼쪽 아래 <b>🎬 시연 상태</b>를 "요청 한도 초과"로 → 오류 화면 → "AI 없이 조건 직접 고르기"</li>
-      <li><b>플래너</b> "이번 주말 종로구 공연 추천해줘" → [1] 눌러 출처 카드 → "주식 투자는 어떻게 시작해?"로 답변 보류</li>
-      <li>출처 카드의 "이 행사로 모임 만들기" → <b>AI 초안</b> → 이름 고치기 → 확인 창</li>
+      <li><b>[AI 검색 · 정상 및 칩 수정]</b> <a href="https://baf-60086-team1.vercel.app/#search" target="_blank" rel="noreferrer">프로토타입 열기</a> → 예시 <b>"이번 주말 서울 공연"</b> 클릭 → 단계별 로딩 후 인식된 조건 칩·사실 기반 배지·<code>AI 응답 JSON 보기</code> 확인 → 칩의 ✕를 눌러 LLM 재호출 없이 결과가 즉시 바뀌는 것 시연</li>
+      <li><b>[확신 낮음 &amp; 미지원 조건]</b> 예시 <b>"아이랑 갈 만한 곳"</b> 클릭 → 조건 확인 화면 + <b>"‘아이랑’은 데이터에 없는 조건이라 반영하지 못했어요"</b> 안내 확인</li>
+      <li><b>[429 오류 &amp; Fallback]</b> 좌측 하단 <b>🎬 시연 상태</b>를 <b>"요청 한도 초과 (429)"</b>로 변경 후 검색 → 오류 복구 화면에서 <b>"AI 없이 조건 직접 고르기"</b>로 전환 후 다시 "정상"으로 복귀</li>
+      <li><b>[RAG 동행 플래너 · 인라인 출처 &amp; 답변 보류]</b> 상단 탭 <b>🧭 AI 동행 플래너</b> 이동 → <b>"이번 주말 종로구 공연 추천해줘"</b> 클릭 → 답변 내 <code>[1]</code> 클릭해 하단 출처 카드 강조 &amp; <code>실행 단계(Trace)</code> 확인 → 이어서 <b>"주식 투자는 어떻게 시작해?"</b> 클릭해 <b>"근거 없음 · 답변 보류"</b> 시연</li>
+      <li><b>[Human-in-the-Loop 모임 초안]</b> 출처 카드의 <b>"이 행사로 모임 만들기"</b> 클릭 → 말투를 <b>"정중하게"</b>로 변경 → 모임 이름 수정 시 <code>AI 초안</code> 배지가 <code>직접 수정</code>으로 변하는 것 확인 → <b>"확인하고 모임 만들기"</b> 승인 모달 시연</li>
     </ol>
   </section>
 
   <section class="sec" id="s6">
-    <div class="sec-head"><h2><span class="num">6</span>8주차까지 일정과 리스크</h2><span class="time">5:00 – 5:40</span></div>
+    <div class="sec-head"><h2><span class="num">6</span>8주차 최종 발표까지의 로드맵 및 리스크 대응</h2><span class="time">5:10 – 5:40</span></div>
     <div class="tw"><table class="t">
-      <tr><th>주차</th><th>할 일</th></tr>
-      <tr><td>5주차</td><td>아이디어·UI 공유, 피드백 반영. 예약 수집으로 데이터 최신화</td></tr>
-      <tr><td>6주차</td><td>기존 화면을 React로 옮기기 · <code>/ai/parse</code> 실제 LLM 연결 · 응답 검증과 오류 처리</td></tr>
-      <tr><td>7주차</td><td>RAG 플래너(pgvector) · 모임 초안 · 품질·보안 점검(응답 시간, 키 관리, 개인정보)</td></tr>
-      <tr><td>8주차</td><td>발표 15분 + 질의응답 5분, RAG 우수 질의·응답 3건 실시간 시연</td></tr>
+      <tr><th>주차</th><th>핵심 목표 및 산출물</th><th>담당</th></tr>
+      <tr><td>5주차 (현재)</td><td>아이디어·React UI 프로토타입 공유 및 피드백 반영 · Swagger <code>POST /collect</code> 재수집으로 11~12월 행사 최신화</td><td>전원 (지호·영선)</td></tr>
+      <tr><td>6주차</td><td>FastAPI <code>POST /ai/parse</code>, <code>/ai/draft</code> 실제 LLM 연동 (<code>.env</code> 4줄 OpenAI 호환 구조) · 프롬프트 V0→V3 비교 실험 및 Pydantic 검증</td><td>지호·찬휘·한솔</td></tr>
+      <tr><td>7주차</td><td>Supabase <code>pgvector</code> + <code>Gemini Embedding 2</code> 기반 <code>POST /ai/ask</code> RAG 구현 · 텍스트 분석(TF-IDF/유사 행사) 연결 · 보안/성능 점검</td><td>한룡·영선·지호</td></tr>
+      <tr><td>8주차 (기말)</td><td>최종 팀 페이지 통합 정리 · <b>RAG 우수 질의·응답 3건 및 실패·개선 사례 실시간 시연</b> (발표 15분 + Q&amp;A 5분)</td><td>전원 (한솔·찬휘)</td></tr>
     </table></div>
     <div class="g3">
-      <div class="box"><h3>⚠️ 데이터가 금방 낡음</h3><p>행사는 끝나면 사라집니다. 예약 수집을 붙이고, 화면에는 "끝난 행사 제외"를 표시합니다.</p></div>
-      <div class="box"><h3>⚠️ 무료 서버·요청 한도</h3><p>Render는 잠들면 깨는 데 1분쯤 걸리고, LLM은 429가 납니다. 저장본 표시, 모델 전환, AI 없는 검색으로 대비합니다.</p></div>
-      <div class="box"><h3>⚠️ 개발 인력</h3><p>React 전환이 가장 큽니다. 프로토타입 코드를 그대로 실제 프론트의 시작점으로 씁니다.</p></div>
+      <div class="box"><h3>⚠️ 리스크 1: 행사 데이터의 시효성</h3><p>공연·축제는 종료일이 지나면 볼 수 없습니다. 매주 수집을 실행해 최신 행사를 적재하고, 화면에는 진행 중·예정 행사만 우선 노출합니다.</p></div>
+      <div class="box"><h3>⚠️ 리스크 2: 무료 서버 슬립 &amp; LLM 429</h3><p>Render 슬립 시 스냅샷 즉시 폴백 배너를 띄우고, LLM 429 한도 초과 시 <code>.env</code> 모델 전환(Gemini ↔ Groq/로컬) 및 수동 필터 Fallback으로 대응합니다.</p></div>
+      <div class="box"><h3>⚠️ 리스크 3: 할루시네이션 통제</h3><p>RAG 프롬프트 가드레일에 더해, 서버 코드에서 답변 텍스트의 행사명·가격·날짜를 출처 DB 행과 대조하는 후처리 검증을 적용합니다.</p></div>
     </div>
   </section>
 
-  <p class="note">데이터 출처: KOPIS 공연예술통합전산망((재)예술경영지원센터) · 한국관광공사 TourAPI · 한국문화정보원 한눈에보는문화정보. 숫자는 2026-11-19에 배포된 백엔드 <code>GET /activities</code>로 확인한 값입니다.</p>
+  <p class="note">데이터 출처: KOPIS 공연예술통합전산망((재)예술경영지원센터) · 한국관광공사 TourAPI · 한국문화정보원 한눈에보는문화정보 · 행정안전부 주민등록 인구통계. 수집 건수(443건, 진행 중 190건)는 2026-11-22 배포된 백엔드 <code>GET /activities</code> 실측값입니다.</p>
 </main>
 </body>
 </html>

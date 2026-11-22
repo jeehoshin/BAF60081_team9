@@ -12,6 +12,13 @@ const TABS: [string, string][] = [
   ["draft", "✍️ 모임 초안"],
 ];
 
+const EXT_LINKS: [string, string, string][] = [
+  ["https://baf60081team9-frontend.vercel.app/plan.html", "📋 5주차 발표 페이지", "팀 아이디어·설계 요약 페이지 (plan.html)"],
+  ["https://baf60081team9-frontend.vercel.app/stats.html", "📊 데이터 분석", "공공 데이터·KOPIS 통계·품질 분석 페이지"],
+  ["https://baf60081-team9.onrender.com/docs", "⚡ Swagger API", "FastAPI 백엔드 Swagger UI (/docs)"],
+  ["https://baf60081team9-frontend.vercel.app/", "🏠 기존 서비스", "선행 과목 전체 서비스 홈"],
+];
+
 const DEMO_OPTS: [DemoMode, string][] = [
   ["normal", "정상"],
   ["slow", "느린 응답"],
@@ -57,15 +64,24 @@ export default function App() {
     <>
       <header className="top">
         <div className="top-in">
-          <a className="brand" href="#search">
-            <img src={mascot} alt="" />
-            같이 <span>갈래?</span>
-            <small>AI 프로토타입</small>
-          </a>
-          <nav className="tabs" aria-label="화면">
+          <div className="brand-wrap">
+            <a className="brand" href="#search">
+              <img src={mascot} alt="" />
+              같이 <span>갈래?</span>
+              <small>AI 프로토타입</small>
+            </a>
+          </div>
+          <nav className="tabs" aria-label="AI 주요 기능 화면">
             {TABS.map(([k, label]) => (
               <a key={k} href={`#${k}`} className={route.tab === k ? "on" : ""}>
                 {label}
+              </a>
+            ))}
+          </nav>
+          <nav className="quick-links" aria-label="프로젝트 바로가기">
+            {EXT_LINKS.map(([href, label, title]) => (
+              <a key={href} href={href} target="_blank" rel="noreferrer" title={title} className="ext-pill">
+                {label} ↗
               </a>
             ))}
           </nav>
@@ -96,10 +112,19 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        데이터 출처: KOPIS 공연예술통합전산망 · 한국관광공사 TourAPI · 한국문화정보원 · 1조 같이 갈래?{" "}
-        <a href="https://baf60081team9-frontend.vercel.app/" target="_blank" rel="noreferrer">
-          기존 서비스
-        </a>
+        <div className="foot-links">
+          {EXT_LINKS.map(([href, label]) => (
+            <a key={href} href={href} target="_blank" rel="noreferrer">
+              {label} ↗
+            </a>
+          ))}
+          <a href="https://github.com/jeehoshin/BAF60081_team9" target="_blank" rel="noreferrer">
+            💻 GitHub 저장소 ↗
+          </a>
+        </div>
+        <div>
+          데이터 출처: KOPIS 공연예술통합전산망((재)예술경영지원센터) · 한국관광공사 TourAPI · 한국문화정보원 한눈에보는문화정보 · BAF60086 1조 같이 갈래?
+        </div>
       </footer>
 
       <div className={`demo ${panelOpen ? "open" : ""} ${demo !== "normal" ? "active" : ""}`}>

@@ -10,6 +10,10 @@ const PAGE = 12;
 
 type Phase = "idle" | "loading" | "confirm" | "error" | "done";
 
+function countRecognized(c: Conditions) {
+  return [c.city, c.region, c.type, c.date, c.free ? "free" : undefined, c.maxCost !== undefined ? "cost" : undefined].filter(Boolean).length;
+}
+
 export default function Search({ items, demo, onDraft }: { items: Activity[]; demo: DemoMode; onDraft: (a: Activity) => void }) {
   const [q, setQ] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -89,6 +93,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
 
   const results = phase === "done" && !forceEmpty ? applyConditions(items, cond) : [];
   const relax = phase === "done" && results.length === 0 ? relaxOptions(items, cond) : [];
+  const recCount = countRecognized(cond);
 
   return (
     <section>
@@ -105,11 +110,20 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
           }}
         >
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="예: 이번 주말 서울에서 무료로 갈 만한 축제" aria-label="찾고 싶은 활동" maxLength={120} />
+          {q && phase !== "loading" && (
+            <button type="button" className="clear-btn" onClick={() => setQ("")} aria-label="입력 지우기">
+              ✕
+            </button>
+          )}
           <button className="btn" type="submit" disabled={!q.trim() || phase === "loading"}>
             {phase === "loading" ? "찾는 중…" : "AI로 찾기"}
           </button>
         </form>
-        <div className="examples">
+        <p className="disclosure">
+          🔒 <b>AI 고지 · 개인정보 보호</b>: 입력 문장은 조건 추출을 위해 LLM API로 전송되며 틀릴 수 있어요. 실명·연락처 등 민감한 개인정보는 입력하지 마세요.
+        </p>
+        <div className="examples" aria-label="추천 예시 질문">
+          <span className="ex-label">예시 질문</span>
           {EXAMPLES.map((ex) => (
             <button key={ex} className="chip-ex" onClick={() => submit(ex)} disabled={phase === "loading"}>
               {ex}
@@ -143,7 +157,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
           <div>
             <h3>이렇게 이해했는데, 맞나요?</h3>
             <p>
-              확신이 낮아서({Math.round(parsed.confidence * 100)}%) 바로 찾지 않고 먼저 물어볼게요.
+              문장에서 확실히 인식한 조건이 <b>{countRecognized(parsed.conditions)}개</b>뿐이라 바로 찾지 않고 먼저 물어볼게요.
             </p>
             <ConditionBar cond={cond} onChange={update} />
             <Ignored words={parsed.ignored} />
@@ -164,14 +178,24 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
           <div className="understood">
             <div className="understood-head">
               <span className="label">{edited ? "✏️ 직접 고친 조건" : "🤖 AI가 이렇게 이해했어요"}</span>
-              {!edited && <span className={`conf ${parsed.confidence >= 0.8 ? "hi" : "mid"}`}>확신 {Math.round(parsed.confidence * 100)}%</span>}
+              <span className={`conf ${recCount >= 2 ? "hi" : "mid"}`} title="모델의 자체 확신도 숫자 대신 실제로 검증 가능한 조건 수와 검색 건수를 표시합니다 (AI-UX 원칙)">
+                ✓ 인식 조건 {recCount}개 · 근거 행사 {results.length}건
+              </span>
+              {parsed.ignored.length > 0 && !edited && <span className="conf mid">⚠️ 미반영 {parsed.ignored.length}개</span>}
               <button className="link" onClick={() => setShowJson((v) => !v)}>
-                {showJson ? "JSON 닫기" : "AI 응답 JSON 보기"}
+                {showJson ? "스키마 JSON 닫기" : "AI 응답 JSON · 검증 보기"}
               </button>
             </div>
             <ConditionBar cond={cond} onChange={update} />
             <Ignored words={parsed.ignored} />
-            {showJson && <pre className="json">{JSON.stringify(toSchemaJson({ ...parsed, conditions: cond }), null, 2)}</pre>}
+            {showJson && (
+              <div className="json-wrap">
+                <p className="json-note">
+                  💡 <b>4주차 구조화 출력(Pydantic) &amp; AI-UX 신뢰도 원칙</b>: 모델이 자체 출력한 <code>confidence({parsed.confidence})</code>는 실제 정답 확률이 아니므로, 화면 상단에는 <b>검증 가능한 사실(인식한 조건 {recCount}개 · 매칭 행사 {results.length}건)</b>로 표현합니다.
+                </p>
+                <pre className="json">{JSON.stringify(toSchemaJson({ ...parsed, conditions: cond }), null, 2)}</pre>
+              </div>
+            )}
             <p className="small muted">틀렸다면 칩의 ✕를 누르거나 조건을 추가해 바로 고칠 수 있어요. AI를 다시 부르지 않아요.</p>
           </div>
 
@@ -198,7 +222,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
                 <h3>이 조건에 맞는 행사가 없어요</h3>
                 {relax.length > 0 ? (
                   <>
-                    <p>조건을 조금 바꾸면 이만큼 있어요.</p>
+                    <p>조건을 조금 완화하면 실제 데이터에 이만큼 있어요 (클릭해 바로 적용):</p>
                     <div className="row">
                       {relax.map((r) => (
                         <button key={r.label} className="chip-ex" onClick={() => update(r.next)}>
@@ -225,7 +249,7 @@ function Ignored({ words }: { words: string[] }) {
   if (!words.length) return null;
   return (
     <p className="ignored">
-      ⚠️ <b>{words.map((w) => `‘${w}’`).join(", ")}</b>은(는) 아직 데이터에 없는 조건이라 반영하지 못했어요. 결과에서 직접 확인해 주세요.
+      ⚠️ <b>{words.map((w) => `‘${w}’`).join(", ")}</b>은(는) 아직 공공 데이터 테이블에 없는 속성이라 필터에 반영하지 못했어요. 아래 카드 설명에서 직접 확인해 주세요.
     </p>
   );
 }
@@ -282,6 +306,7 @@ function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Cond
           ))}
         </select>
       )}
+      {!cond.free && cond.maxCost !== undefined && null}
       {!cond.free && cond.maxCost === undefined && (
         <select aria-label="가격 추가" value="" onChange={(e) => onChange({ ...cond, ...PRICE_OPTS[Number(e.target.value)][1] })}>
           <option value="">+ 가격</option>
