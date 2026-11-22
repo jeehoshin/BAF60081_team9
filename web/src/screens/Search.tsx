@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { Activity, City, Conditions, DatePreset, DemoMode, Parsed, Pref } from "../types";
 import { parseQuery, toSchemaJson, wait } from "../ai";
 import { DATE_LABEL, applyConditions, fmtAgeCond, relaxOptions } from "../filters";
-import { ActivityCard, ErrorBox, Proto, StepLoader, type ErrorKind } from "../components";
+import { ActivityCard, ErrorBox, HeroArt, Proto, StepLoader, type ErrorKind } from "../components";
 import { PREFS, PREF_LABEL, rankByPrefs, summarize } from "../prefs";
 
 const EXAMPLES = ["이번 주말 서울 공연", "이번 주말 아이랑 갈 만한 곳", "아이랑 볼 90분 이하 공연", "주차 편한 실내 데이트"];
@@ -115,9 +115,11 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
   return (
     <section>
       <div className="hero">
-        <h1>
-          말로 찾는 <em>이번 주 활동</em>
-        </h1>
+        <div className="hero-card">
+        <p className="eyebrow">공연 · 축제 · 전시 동행</p>
+        <div className="band" />
+        <h1>이번 주말, 어디 갈래?</h1>
+        <p className="strip">Ask in one sentence</p>
         <p className="lead">평소 말하듯 적으면 AI가 날짜·지역·유형·가격 같은 조건으로 걸러 주고, ‘아이랑·실내’처럼 딱 맞는 칸이 없는 말은 근거를 찾아 순서로 반영해요.</p>
         <form
           className="searchbar"
@@ -133,20 +135,20 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
             </button>
           )}
           <button className="btn" type="submit" disabled={!q.trim() || phase === "loading"}>
-            {phase === "loading" ? "찾는 중…" : "AI로 찾기"}
+            {phase === "loading" ? "찾는 중…" : "찾아 줘"}
           </button>
         </form>
-        <p className="disclosure">
-          🔒 <b>AI 고지 · 개인정보 보호</b>: 입력 문장은 조건 추출을 위해 LLM API로 전송되며 틀릴 수 있어요. 실명·연락처 등 민감한 개인정보는 입력하지 마세요.
-        </p>
         <div className="examples" aria-label="추천 예시 질문">
-          <span className="ex-label">예시 질문</span>
+          <span className="ex-label">예시</span>
           {EXAMPLES.map((ex) => (
             <button key={ex} className="chip-ex" onClick={() => submit(ex)} disabled={phase === "loading"}>
               {ex}
             </button>
           ))}
         </div>
+        <p className="disclosure">질문은 외부 AI 모델로 보내지고, AI는 틀릴 수 있어요. 이름·연락처 같은 개인정보는 적지 마세요. (지금 프로토타입은 규칙으로 흉내 내서 어디에도 보내지 않아요)</p>
+        </div>
+        <HeroArt />
       </div>
 
       {phase === "idle" && (
@@ -194,7 +196,7 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
         <>
           <div className="understood">
             <div className="understood-head">
-              <span className="label">{edited ? "✏️ 직접 고친 조건" : "🤖 AI가 이렇게 이해했어요"}</span>
+              <span className="label">{edited ? "직접 고친 조건" : "AI가 이해한 조건"}</span>
               <span className={`conf ${recCount >= 2 ? "hi" : "mid"}`} title="모델의 자체 확신도 숫자 대신 실제로 검증 가능한 조건 수와 검색 건수를 표시합니다 (AI-UX 원칙)">
                 ✓ 인식 조건 {recCount}개 · 근거 행사 {results.length}건
               </span>
@@ -230,9 +232,10 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
 
           {results.length > 0 ? (
             <>
-              <p className="count">
-                <b>{results.length}건</b> 찾았어요 · 끝난 행사는 뺐어요
-              </p>
+              <div className="res-head">
+                <h2>찾은 행사 {results.length}건</h2>
+                <p>공공 데이터에 있는 행사만 보여 줘요 · 끝난 행사는 뺐어요</p>
+              </div>
               {(cond.prefs ?? []).map((pref) => {
                 const s = summarize(results, pref);
                 return (
@@ -260,14 +263,14 @@ export default function Search({ items, demo, onDraft }: { items: Activity[]; de
             <div className="state empty">
               <div className="state-ico">🔍</div>
               <div>
-                <h3>이 조건에 맞는 행사가 없어요</h3>
+                <h3>이 조건에 맞는 행사가 없어요. 더 넓게 찾아볼까요?</h3>
                 {relax.length > 0 ? (
                   <>
-                    <p>조건을 조금 완화하면 실제 데이터에 이만큼 있어요 (클릭해 바로 적용):</p>
+                    <p>조건 하나를 빼면 결과가 늘어나요. 숫자는 지금 데이터로 센 실제 건수예요.</p>
                     <div className="row">
                       {relax.map((r) => (
                         <button key={r.label} className="chip-ex" onClick={() => update(r.next)}>
-                          {r.label} <b>{r.count}건</b>
+                          {r.label} · {r.count}건
                         </button>
                       ))}
                     </div>
@@ -316,15 +319,16 @@ const RUNTIME_OPTS: [string, number][] = [
 ];
 
 function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Conditions) => void }) {
-  const chips: { label: string; clear: Conditions }[] = [];
-  if (cond.city) chips.push({ label: cond.city, clear: { ...cond, city: undefined, region: undefined } });
-  if (cond.region) chips.push({ label: cond.region, clear: { ...cond, region: undefined } });
-  if (cond.type) chips.push({ label: cond.type, clear: { ...cond, type: undefined } });
-  if (cond.date) chips.push({ label: DATE_LABEL[cond.date], clear: { ...cond, date: undefined } });
-  if (cond.free) chips.push({ label: "무료", clear: { ...cond, free: undefined } });
-  if (cond.maxCost !== undefined) chips.push({ label: `${(cond.maxCost / 10000).toLocaleString("ko-KR")}만원 이하`, clear: { ...cond, maxCost: undefined } });
-  if (cond.ageMonths !== undefined) chips.push({ label: fmtAgeCond(cond.ageMonths), clear: { ...cond, ageMonths: undefined } });
-  if (cond.maxRuntime !== undefined) chips.push({ label: `${cond.maxRuntime}분 이하`, clear: { ...cond, maxRuntime: undefined } });
+  // kind는 칩 색: 장소 · 유형 · 날짜 · 가격 · 관람 조건
+  const chips: { label: string; clear: Conditions; kind: string }[] = [];
+  if (cond.city) chips.push({ label: cond.city, clear: { ...cond, city: undefined, region: undefined }, kind: "place" });
+  if (cond.region) chips.push({ label: cond.region, clear: { ...cond, region: undefined }, kind: "place" });
+  if (cond.type) chips.push({ label: cond.type, clear: { ...cond, type: undefined }, kind: "type" });
+  if (cond.date) chips.push({ label: DATE_LABEL[cond.date], clear: { ...cond, date: undefined }, kind: "date" });
+  if (cond.free) chips.push({ label: "무료", clear: { ...cond, free: undefined }, kind: "price" });
+  if (cond.maxCost !== undefined) chips.push({ label: `${(cond.maxCost / 10000).toLocaleString("ko-KR")}만 원 이하`, clear: { ...cond, maxCost: undefined }, kind: "price" });
+  if (cond.ageMonths !== undefined) chips.push({ label: fmtAgeCond(cond.ageMonths), clear: { ...cond, ageMonths: undefined }, kind: "meta" });
+  if (cond.maxRuntime !== undefined) chips.push({ label: `${cond.maxRuntime}분 이하`, clear: { ...cond, maxRuntime: undefined }, kind: "meta" });
   const prefs = cond.prefs ?? [];
   const setPrefs = (next: Pref[]) => onChange({ ...cond, prefs: next.length ? next : undefined });
 
@@ -332,7 +336,7 @@ function ConditionBar({ cond, onChange }: { cond: Conditions; onChange: (c: Cond
     <div className="chips">
       {chips.length === 0 && prefs.length === 0 && <span className="muted small">조건 없음 · 전체에서 찾아요</span>}
       {chips.map((c) => (
-        <span key={c.label} className="chip">
+        <span key={c.label} className={`chip k-${c.kind}`}>
           {c.label}
           <button aria-label={`${c.label} 조건 빼기`} onClick={() => onChange(c.clear)}>
             ✕

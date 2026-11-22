@@ -3,7 +3,74 @@ import type { Activity, Pref } from "./types";
 import { SOURCE_LABEL, fmtAge, fmtCost, fmtPeriod, fmtRuntime } from "./filters";
 import { PREF_LABEL, evidenceFor } from "./prefs";
 
-const TYPE_ICON: Record<string, string> = { 공연: "🎭", 축제: "🎪", 전시: "🖼️", 러닝: "🏃" };
+type Shape = React.CSSProperties;
+
+// 포스터가 없을 때 쓰는 엽서 그림 세 가지 (행사 번호로 고른다. 내용과는 관계없는 장식)
+const POSTCARDS: { bg: string; shapes: Shape[] }[] = [
+  {
+    bg: "var(--salmon)",
+    shapes: [
+      { left: -20, bottom: -30, width: 140, height: 140, borderRadius: "50%", background: "var(--butter)" },
+      { right: 24, top: 22, width: 56, height: 56, borderRadius: "50%", background: "var(--maroon)" },
+      { right: 0, bottom: 0, width: "38%", height: "40%", background: "var(--olive)" },
+    ],
+  },
+  {
+    bg: "var(--sky)",
+    shapes: [
+      { left: 0, top: 0, bottom: 0, width: "30%", background: "var(--maroon)" },
+      { left: "40%", top: 30, width: 70, height: 70, borderRadius: "50%", background: "var(--salmon)" },
+      { right: -10, bottom: -40, width: 160, height: 110, borderRadius: "80px 80px 0 0", background: "var(--butter)" },
+    ],
+  },
+  {
+    bg: "var(--olive)",
+    shapes: [
+      { left: 24, top: 24, width: 90, height: 90, borderRadius: "50%", background: "var(--card)" },
+      { left: 64, top: 50, width: 90, height: 90, borderRadius: "50%", background: "var(--salmon)" },
+      { right: 0, top: 0, width: "34%", height: "100%", background: "var(--maroon)" },
+    ],
+  },
+];
+
+function Postcard({ seed }: { seed: number }) {
+  const p = POSTCARDS[seed % POSTCARDS.length];
+  return (
+    <div className="thumb-art" aria-hidden="true" style={{ position: "absolute", inset: 0, background: p.bg }}>
+      {p.shapes.map((st, i) => (
+        <span key={i} style={st} />
+      ))}
+    </div>
+  );
+}
+
+// '공연으로'·'전시로'처럼 받침에 맞는 조사 (받침 없거나 ㄹ이면 '로')
+function withRo(word: string) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  const jong = code >= 0 && code < 11172 ? code % 28 : 0;
+  return jong === 0 || jong === 8 ? "로" : "으로";
+}
+
+// 첫 화면 오른쪽 그림: 하늘·언덕·해·겹친 엽서 두 장
+export function HeroArt() {
+  const shapes: Shape[] = [
+    { left: 0, right: 0, bottom: 0, height: "34%", background: "var(--olive)" },
+    { right: "14%", top: "12%", width: 120, height: 120, borderRadius: "50%", background: "var(--butter)" },
+    { left: "10%", bottom: "22%", width: "52%", height: 92, borderRadius: 10, background: "var(--salmon)", transform: "rotate(-8deg)" },
+    { left: "22%", bottom: "30%", width: "50%", height: 92, borderRadius: 10, background: "var(--card)", transform: "rotate(4deg)" },
+    { left: "30%", bottom: "36%", width: "40%", height: 4, background: "var(--maroon)", transform: "rotate(4deg)", opacity: 0.6 },
+    { left: "30%", bottom: "42%", width: "28%", height: 4, background: "var(--maroon)", transform: "rotate(4deg)", opacity: 0.4 },
+    { left: 0, top: 0, width: "16%", height: "100%", background: "var(--maroon)" },
+  ];
+  return (
+    <div className="hero-art" aria-hidden="true">
+      {shapes.map((st, i) => (
+        <span key={i} style={st} />
+      ))}
+      <p>together.</p>
+    </div>
+  );
+}
 
 export function ActivityCard({ a, onDraft, refNo, prefs }: { a: Activity; onDraft?: (a: Activity) => void; refNo?: number; prefs?: Pref[] }) {
   const [imgOk, setImgOk] = useState(Boolean(a.image_url));
@@ -12,28 +79,31 @@ export function ActivityCard({ a, onDraft, refNo, prefs }: { a: Activity; onDraf
   return (
     <article className="card">
       <div className="thumb">
-        {imgOk && a.image_url ? (
-          <img src={a.image_url} alt="" loading="lazy" onError={() => setImgOk(false)} />
-        ) : (
-          <span className="thumb-ph">{TYPE_ICON[a.activity_type] ?? "📍"}</span>
-        )}
+        {imgOk && a.image_url ? <img src={a.image_url} alt="" loading="lazy" onError={() => setImgOk(false)} /> : <Postcard seed={a.activity_id} />}
         {refNo && <span className="ref-no">[{refNo}]</span>}
       </div>
       <div className="card-body">
-        <div className="card-tags">
-          <span className={`tag t-${a.activity_type}`}>{a.activity_type}</span>
-          {a.region && <span className="tag">{a.region}</span>}
-          {age && <span className="tag">{age}</span>}
-          {runtime && <span className="tag">⏱️ {runtime}</span>}
-        </div>
+        <p className="kicker">
+          {a.activity_type}
+          {a.region ? ` · ${a.region}` : ""}
+        </p>
+        <div className="band thin" />
         <h3>{a.title}</h3>
-        <p className="meta">📅 {fmtPeriod(a)}</p>
-        <p className="meta">📍 {a.place ?? "장소 정보 없음"}</p>
-        <p className="meta">💳 {fmtCost(a)}</p>
+        {(age || runtime) && (
+          <div className="card-tags">
+            {age && <span className="tag">{age}</span>}
+            {runtime && <span className="tag">{runtime}</span>}
+          </div>
+        )}
+        <p className="meta">
+          {a.place ?? "장소 정보 없음"}
+          <br />
+          {fmtPeriod(a)} · {fmtCost(a)}
+        </p>
         {prefs && prefs.length > 0 && <EvidenceList a={a} prefs={prefs} />}
         <div className="card-foot">
           <span className="src" title="데이터 출처">
-            출처 · {SOURCE_LABEL[a.source] ?? a.source}
+            출처 {SOURCE_LABEL[a.source] ?? a.source}
           </span>
           <div className="card-actions">
             {a.source_url && (
@@ -43,7 +113,8 @@ export function ActivityCard({ a, onDraft, refNo, prefs }: { a: Activity; onDraf
             )}
             {onDraft && (
               <button className="btn sm" onClick={() => onDraft(a)}>
-                이 행사로 모임 만들기
+                이 {a.activity_type}
+                {withRo(a.activity_type)} 모임 만들기
               </button>
             )}
           </div>

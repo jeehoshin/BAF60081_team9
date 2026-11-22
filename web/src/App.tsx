@@ -4,19 +4,18 @@ import { loadActivities, type LoadResult } from "./data";
 import Search from "./screens/Search";
 import Ask from "./screens/Ask";
 import Draft from "./screens/Draft";
-import mascot from "./mascot.svg";
 
 const TABS: [string, string][] = [
-  ["search", "🔎 AI 검색"],
-  ["ask", "🧭 AI 동행 플래너"],
-  ["draft", "✍️ 모임 초안"],
+  ["search", "AI 검색"],
+  ["ask", "AI 동행 플래너"],
+  ["draft", "모임 초안"],
 ];
 
 const EXT_LINKS: [string, string, string][] = [
-  ["https://baf60081team9-frontend.vercel.app/plan.html", "📋 5주차 발표 페이지", "팀 아이디어·설계 요약 페이지 (plan.html)"],
-  ["https://baf60081team9-frontend.vercel.app/stats.html", "📊 데이터 분석", "공공 데이터·KOPIS 통계·품질 분석 페이지"],
-  ["https://baf60081-team9.onrender.com/docs", "⚡ Swagger API", "FastAPI 백엔드 Swagger UI (/docs)"],
-  ["https://baf60081team9-frontend.vercel.app/", "🏠 기존 서비스", "선행 과목 전체 서비스 홈"],
+  ["https://baf60081team9-frontend.vercel.app/plan.html", "5주차 발표 페이지", "팀 아이디어·설계 요약 페이지 (plan.html)"],
+  ["https://baf60081team9-frontend.vercel.app/stats.html", "데이터 분석", "공공 데이터·KOPIS 통계·품질 분석 페이지"],
+  ["https://baf60081-team9.onrender.com/docs", "Swagger API", "FastAPI 백엔드 Swagger UI (/docs)"],
+  ["https://baf60081team9-frontend.vercel.app/", "기존 서비스", "선행 과목 전체 서비스 홈"],
 ];
 
 const DEMO_OPTS: [DemoMode, string][] = [
@@ -66,8 +65,8 @@ export default function App() {
         <div className="top-in">
           <div className="brand-wrap">
             <a className="brand" href="#search">
-              <img src={mascot} alt="" />
-              같이 <span>갈래?</span>
+              <b>같이 갈래?</b>
+              <span className="en">let&apos;s go together.</span>
               <small>AI 프로토타입</small>
             </a>
           </div>
@@ -119,7 +118,7 @@ export default function App() {
             </a>
           ))}
           <a href="https://github.com/jeehoshin/BAF60081_team9" target="_blank" rel="noreferrer">
-            💻 GitHub 저장소 ↗
+            GitHub 저장소 ↗
           </a>
         </div>
         <div>
