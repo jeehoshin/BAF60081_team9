@@ -58,3 +58,6 @@ yarn-error.log*
 .pytest_cache/
 .coverage
 htmlcov/
+
+# 텍스트 충족률 확인 결과 (scripts/check_text_coverage.py)
+text_coverage.csv
