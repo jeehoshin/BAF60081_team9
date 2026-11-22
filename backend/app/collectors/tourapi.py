@@ -1,7 +1,8 @@
 """한국관광공사 TourAPI(국문 관광정보 서비스_GW, KorService2) 행사정보 수집.
 
-searchFestival2(행사정보조회) 한 가지만 쓴다. 목록에 주소·좌표·기간·대표이미지가 다 있어서
-상세 조회 없이 저장할 수 있다 (개발계정 일 1,000건 한도를 아끼려는 것).
+searchFestival2(행사정보조회)로 목록을 받는다. 목록에 주소·좌표·기간·대표이미지가 다 있다.
+행사 개요(overview)만 상세 조회(detailCommon2)로 받는데, 새 행사이거나 아직 확인하지 않은 행사만 부른다
+(개발계정 일 1,000건 한도를 아끼려는 것).
 
 알아둘 점 (2026-09 기준 실측 사례)
 - 지역 필터는 areaCode가 아니라 lDongRegnCd(법정동 시도코드)로 건다. 법정동 체계로 옮겨 가면서
@@ -27,6 +28,7 @@ from app.collectors.common import (
     SourceReport,
     clip,
     end_of,
+    fill_details,
     gu_from_address,
     https,
     join_parts,
@@ -38,6 +40,7 @@ from app.collectors.common import (
 
 SOURCE = "한국관광공사"
 BASE_URL = "https://apis.data.go.kr/B551011/KorService2/searchFestival2"
+DETAIL_URL = "https://apis.data.go.kr/B551011/KorService2/detailCommon2"
 ATTRIBUTION = "출처: 한국관광공사 TourAPI"
 PAGE_SIZE = 100
 MAX_PAGES = 15  # 지역당 최대 1,500건까지 넘겨 본다 (하루 1,000건 한도 안에서 넉넉함)
@@ -167,8 +170,13 @@ async def fetch_area(
     window_to: date,
     report: SourceReport,
     max_span_days: int = 90,
+    fetch_details: bool = False,
+    detail_skip: set[str] | None = None,
 ) -> list[dict]:
-    """한 지역의 행사를 activities 행(dict) 목록으로 돌려준다."""
+    """한 지역의 행사를 activities 행(dict) 목록으로 돌려준다.
+
+    fetch_details면 행사 개요(overview)를 상세 조회로 채운다. detail_skip에 든 행사는 부르지 않는다.
+    """
     code = AREAS[area]["code"]
     # 이미 시작해서 진행 중인 행사도 받으려고, 시작일 조건을 '긴 행사 기준'만큼 앞당긴다.
     since = window_from - timedelta(days=max_span_days or 60)
@@ -195,16 +203,31 @@ async def fetch_area(
         if len(items) < PAGE_SIZE or page * PAGE_SIZE >= total:
             break
     report.kept += len(rows)
-    return list(rows.values())
+    out = list(rows.values())
+    if fetch_details:
+
+        async def overview(row: dict) -> str | None:
+            params = {
+                "serviceKey": normalize_key(key),
+                "MobileOS": "ETC",
+                "MobileApp": "gachigalae",
+                "_type": "json",
+                "contentId": row["external_id"].split(":", 1)[1],
+            }
+            items, _ = parse_page(await _get(client, params, url=DETAIL_URL))
+            return items[0].get("overview") if items else None
+
+        await fill_details(out, detail_skip, report, overview, "overview")
+    return out
 
 
-async def _get(client: httpx.AsyncClient, params: dict) -> str:
+async def _get(client: httpx.AsyncClient, params: dict, url: str = BASE_URL) -> str:
     problem = ""
     for attempt in range(2):
         if attempt:
             await asyncio.sleep(0.7)
         try:
-            res = await client.get(BASE_URL, params=params)
+            res = await client.get(url, params=params)
         except httpx.HTTPError as exc:
             problem = f"TourAPI에 연결하지 못했어요 ({type(exc).__name__})"
             continue

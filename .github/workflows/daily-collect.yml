@@ -14,6 +14,7 @@
 # - GitHub 사정에 따라 예약 실행이 몇 분~수십 분 늦을 수 있다.
 # - 같은 행사는 다시 받아도 새로 만들지 않고 고쳐 쓴다(external_id 기준). 매일 돌려도 중복이 쌓이지 않는다.
 # - 매달 2일에는 KOPIS 통계(POST /collect/kopis-stats)도 함께 받는다. 분석 페이지 지표용.
+# - 상세 설명은 새 행사나 30일 넘게 확인하지 않은 행사만 불러서(detail=new) 호출 수가 거의 늘지 않는다.
 name: daily-collect
 
 on:
@@ -91,7 +92,7 @@ jobs:
             cat result.json || true
             exit 1
           fi
-          jq '{window, dry_run, collected, inserted, updated, unchanged, results}' result.json
+          jq '{window, dry_run, collected, inserted, updated, unchanged, results, text_coverage}' result.json
           {
             echo "## 행사 수집 결과"
             echo ""
@@ -100,6 +101,20 @@ jobs:
             echo "| 출처 | 지역 | 받음 | 남김 | 건너뜀 | 오류 |"
             echo "|---|---|---|---|---|---|"
             jq -r '.results[] | "| \(.source) | \(.area) | \(.fetched) | \(.kept) | \(.skipped) | \(.error // "") |"' result.json
+            echo ""
+            echo "### 상세 설명 조회 (이번 실행)"
+            echo ""
+            echo "| 출처 | 지역 | 불러옴 | 설명 있음 | 실패 | 미룸 | 최근 확인이라 건너뜀 |"
+            echo "|---|---|---|---|---|---|---|"
+            jq -r '.results[] | select(.details != null) | "| \(.source) | \(.area) | \(.details.fetched) | \(.details.with_text) | \(.details.failed) | \(.details.deferred) | \(.details.skipped_recent) |"' result.json
+            if jq -e '.text_coverage | length > 0' result.json > /dev/null 2>&1; then
+              echo ""
+              echo "### 설명 텍스트 충족률 (DB 전체)"
+              echo ""
+              echo "| 출처 | 행사 | 설명 있음 | 200자 이상 | 관람연령 있음 |"
+              echo "|---|---|---|---|---|"
+              jq -r '.text_coverage[] | "| \(.source) | \(.total) | \(.with_text) | \(.over_200) | \(.with_age) |"' result.json
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
           errors=$(jq '[.results[] | select(.error != null and .error != "")] | length' result.json)
           if [ "$errors" -gt 0 ]; then

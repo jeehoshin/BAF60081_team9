@@ -63,6 +63,14 @@ _ADDED_COLUMNS = {
         "external_id": "VARCHAR(64)",
         "source_url": "VARCHAR(512)",
         "image_url": "VARCHAR(512)",
+        # 2026-11 상세 설명·관람 조건 (docs/migrations/20261122_activity_detail.sql과 같은 칸)
+        "detail_text": "TEXT",
+        "detail_source": "VARCHAR(32)",
+        "text_hash": "VARCHAR(64)",
+        "min_age_months": "INTEGER",
+        "runtime_min": "INTEGER",
+        "intro_images": "TEXT",
+        "detail_checked_at": "TIMESTAMP",
     },
 }
 

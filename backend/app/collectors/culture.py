@@ -1,7 +1,10 @@
 """한국문화정보원 '한눈에보는문화정보조회서비스' 전시 수집.
 
-분야별 조회(realm2)에서 전시(realmCode=D000)만 받는다. 목록에 장소·구·좌표·기간·썸네일이 있어서
-상세 조회(detail2) 없이 저장한다. 관람료는 목록에 없어서 비워 둔다.
+분야별 조회(realm2)에서 전시(realmCode=D000)만 받는다. 목록에 장소·구·좌표·기간·썸네일이 있다.
+전시 설명(contents1)만 상세 조회(detail2)로 받는데, 새 전시이거나 아직 확인하지 않은 전시만 부른다.
+관람료는 목록에 없어서 비워 둔다.
+
+설명은 주로 국공립 기관 전시에만 채워져 온다 (2026-11 샘플 실측: 30건 중 5건이 200자 이상, 4건이 국립현대미술관).
 
 알아둘 점 (2026-10 실측)
 - 응답은 XML. 지역은 시도 이름("서울", "대전")을 sido에 그대로 넣는다.
@@ -26,6 +29,7 @@ from app.collectors.common import (
     SourceReport,
     clip,
     end_of,
+    fill_details,
     gu_from_address,
     https,
     join_parts,
@@ -38,6 +42,7 @@ from app.collectors.tourapi import normalize_key
 
 SOURCE = "한국문화정보원"
 BASE_URL = "https://apis.data.go.kr/B553457/cultureinfo/realm2"
+DETAIL_URL = "https://apis.data.go.kr/B553457/cultureinfo/detail2"
 ATTRIBUTION = "출처: 한국문화정보원 한눈에보는문화정보"
 REALM_EXHIBITION = "D000"
 PAGE_SIZE = 100
@@ -147,8 +152,13 @@ async def fetch_area(
     window_to: date,
     report: SourceReport,
     max_span_days: int = 90,
+    fetch_details: bool = False,
+    detail_skip: set[str] | None = None,
 ) -> list[dict]:
-    """한 지역의 전시를 activities 행(dict) 목록으로 돌려준다."""
+    """한 지역의 전시를 activities 행(dict) 목록으로 돌려준다.
+
+    fetch_details면 전시 설명(contents1)을 상세 조회로 채운다. detail_skip에 든 전시는 부르지 않는다.
+    """
     rows: dict[str, dict] = {}
     for page in range(1, MAX_PAGES + 1):
         params = {
@@ -171,16 +181,25 @@ async def fetch_area(
         if len(items) < PAGE_SIZE or page * PAGE_SIZE >= total:
             break
     report.kept += len(rows)
-    return list(rows.values())
+    out = list(rows.values())
+    if fetch_details:
+
+        async def contents(row: dict) -> str | None:
+            params = {"serviceKey": normalize_key(key), "seq": row["external_id"].split(":", 1)[1]}
+            items, _ = parse_page(await _get(client, params, url=DETAIL_URL))
+            return items[0].get("contents1") if items else None
+
+        await fill_details(out, detail_skip, report, contents, "contents1")
+    return out
 
 
-async def _get(client: httpx.AsyncClient, params: dict) -> str:
+async def _get(client: httpx.AsyncClient, params: dict, url: str = BASE_URL) -> str:
     problem = ""
     for attempt in range(2):
         if attempt:
             await asyncio.sleep(0.7)
         try:
-            res = await client.get(BASE_URL, params=params)
+            res = await client.get(url, params=params)
         except httpx.HTTPError as exc:
             problem = f"문화정보원에 연결하지 못했어요 ({type(exc).__name__})"
             continue

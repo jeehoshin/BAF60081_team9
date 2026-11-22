@@ -43,6 +43,10 @@ def run_collect(
     kopis_per_genre: int = Query(6, ge=1, le=30, description="KOPIS 장르(9개)마다 지역별 최대 건수"),
     max_span_days: int = Query(90, ge=0, le=730, description="이보다 긴 장기·상설 행사는 제외 (0 = 제한 없음)"),
     culture_max_span_days: int = Query(0, ge=0, le=3650, description="한국문화정보원 전시만 따로: 이보다 긴 전시 제외 (0 = 제한 없음, 상설·장기 전시도 받음)"),
+    detail: str = Query(
+        "new",
+        description="상세 설명 조회. new = 새 행사·30일 넘게 확인 안 한 행사만 (기본), all = 전부 다시, off = 부르지 않음. KOPIS는 원래 상세를 불러서 항상 채운다",
+    ),
     dry_run: bool = Query(False, description="true면 저장하지 않고 수집 결과만 보여준다"),
     db: Session = Depends(get_db),
 ):
@@ -55,6 +59,7 @@ def run_collect(
             kopis_per_genre=kopis_per_genre,
             max_span_days=max_span_days,
             culture_max_span_days=culture_max_span_days,
+            detail=detail,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

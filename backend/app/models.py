@@ -53,6 +53,14 @@ class Activity(Base):
     lat: Mapped[float | None] = mapped_column(Float)
     lng: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now_kst)
+    # 상세 설명과 관람 조건 (2026-11, RAG·텍스트 분석·"아이랑" 같은 조건 검색용)
+    detail_text: Mapped[str | None] = mapped_column(Text)  # 상세 API의 줄거리·개요·전시 설명 (태그 뺀 글자)
+    detail_source: Mapped[str | None] = mapped_column(String(32))  # 어느 칸에서 왔나: sty / overview / contents1
+    text_hash: Mapped[str | None] = mapped_column(String(64))  # detail_text의 sha256. 바뀐 행사만 다시 임베딩할 때
+    min_age_months: Mapped[int | None] = mapped_column(Integer)  # 관람 가능 최소 나이(개월). 전체 관람가 0
+    runtime_min: Mapped[int | None] = mapped_column(Integer)  # 러닝타임(분)
+    intro_images: Mapped[str | None] = mapped_column(Text)  # KOPIS 소개 이미지 주소 목록 (JSON 배열)
+    detail_checked_at: Mapped[datetime | None] = mapped_column(DateTime)  # 상세를 마지막으로 확인한 때
 
     meetups = relationship("Meetup", back_populates="activity")
     likes = relationship("Like", back_populates="activity")

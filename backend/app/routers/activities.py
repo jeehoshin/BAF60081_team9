@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,6 +11,7 @@ from app.models import Activity, Like, Meetup, Participant, User, now_kst
 from app.schemas import (
     ActivityCreate,
     ActivityDetailOut,
+    ActivityDetailText,
     ActivityOut,
     LikeCreate,
     MeetupOut,
@@ -46,6 +48,11 @@ def list_activities(
     activity_type: str | None = Query(None, alias="type"),
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    age_months: int | None = Query(
+        None, ge=0, le=300,
+        description="이 나이(개월)인 사람도 볼 수 있는 행사만. 예: 36이면 '36개월 이상'까지. 관람연령을 모르는 행사는 뺀다",
+    ),
+    max_runtime: int | None = Query(None, ge=1, le=600, description="러닝타임이 이 분 이하인 행사만 (모르는 행사는 뺀다)"),
     limit: int = Query(1000, ge=1, le=2000, description="최대 몇 건까지 (기본 1000)"),
     offset: int = Query(0, ge=0, description="앞에서 몇 건 건너뛸지"),
     db: Session = Depends(get_db),
@@ -68,6 +75,10 @@ def list_activities(
         q = q.filter(last_day >= date_from)
     if date_to:
         q = q.filter(Activity.starts_at <= date_to)
+    if age_months is not None:
+        q = q.filter(Activity.min_age_months.isnot(None), Activity.min_age_months <= age_months)
+    if max_runtime is not None:
+        q = q.filter(Activity.runtime_min.isnot(None), Activity.runtime_min <= max_runtime)
     # 정렬: 지금 볼 수 있거나 곧 시작하는 것 먼저, 이미 끝난 것은 맨 뒤
     now = now_kst()
     is_over = case((last_day < now, 1), else_=0)
@@ -96,6 +107,23 @@ def get_activity(activity_id: int, db: Session = Depends(get_db)):
         activity=ActivityOut.model_validate(activity),
         meetups=_meetup_outs(db, meetups),
         like_count=like_count,
+        detail=_detail_text(activity),
+    )
+
+
+def _detail_text(activity: Activity) -> ActivityDetailText | None:
+    if not (activity.detail_text or activity.intro_images or activity.detail_checked_at):
+        return None
+    try:
+        images = json.loads(activity.intro_images) if activity.intro_images else []
+    except ValueError:
+        images = []
+    return ActivityDetailText(
+        detail_text=activity.detail_text,
+        detail_source=activity.detail_source,
+        text_hash=activity.text_hash,
+        intro_images=[u for u in images if isinstance(u, str)],
+        detail_checked_at=activity.detail_checked_at,
     )
 
 

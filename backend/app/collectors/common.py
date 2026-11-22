@@ -3,10 +3,15 @@
 - 지역: 서울·대전. KOPIS 지역코드와 TourAPI 법정동 시도코드가 둘 다 11(서울)·30(대전)이다.
 - 구: 주소("대전광역시 중구 선화서로 2")에서 뽑는다. 우리 activities.region은 'OO구' 형식이다.
 - 날짜: 공공 API는 날짜만 준다. 시작은 그날 00:00, 끝은 그날 23:59:59로 저장한다.
+- 상세 설명: 줄거리·개요·전시 설명은 태그를 빼고 글자만 detail_text에 둔다 (RAG·텍스트 분석용).
 """
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
+import html
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
@@ -58,6 +63,11 @@ MAX_LEN = {
 }
 
 
+DETAIL_MAX_CHARS = 4000  # 설명 글자 수 상한. 임베딩·프롬프트에 넣기 좋은 길이로 자른다
+DETAIL_MAX_PER_AREA = 150  # 한 번 수집에서 출처·지역마다 상세를 부르는 최대 수 (TourAPI 개발계정 하루 1,000건 한도 보호)
+DETAIL_CONCURRENCY = 4  # 상세를 동시에 몇 건까지 부를지
+
+
 class CollectError(Exception):
     """API가 오류를 돌려줬을 때. 메시지는 화면(Swagger)에 그대로 보여준다."""
 
@@ -72,6 +82,10 @@ class SourceReport:
     kept: int = 0  # 저장 대상으로 남은 건수
     skipped: dict[str, int] = field(default_factory=dict)  # 버린 이유별 건수
     error: str | None = None
+    # 상세 설명 조회: 부른 수 / 설명이 있던 수 / 실패 / 다음으로 미룬 수 / 최근에 확인해서 건너뛴 수
+    details: dict[str, int] = field(
+        default_factory=lambda: {"fetched": 0, "with_text": 0, "failed": 0, "deferred": 0, "skipped_recent": 0}
+    )
 
     def skip(self, reason: str) -> None:
         self.skipped[reason] = self.skipped.get(reason, 0) + 1
@@ -84,6 +98,7 @@ class SourceReport:
             "kept": self.kept,
             "skipped": self.skipped,
             "error": self.error,
+            "details": self.details,
         }
 
 
@@ -178,3 +193,118 @@ def to_float(raw: str | None) -> float | None:
 def join_parts(*parts: str | None, sep: str = " · ") -> str | None:
     cleaned = [" ".join(p.split()) for p in parts if p and p.strip()]
     return sep.join(cleaned) if cleaned else None
+
+
+# ---------- 상세 설명 · 관람 조건 ----------
+
+def plain_text(raw: str | None, limit: int = DETAIL_MAX_CHARS) -> str | None:
+    """HTML 태그·엔티티를 걷어 낸 글자. 비었으면 None.
+
+    '<p>가족&nbsp;연극</p><br>' → '가족 연극'. 엔티티가 두 번 감싸여 오는 경우(&amp;lt;p&amp;gt;)도 푼다.
+    """
+    if not raw:
+        return None
+    text = raw
+    for _ in range(2):
+        text = html.unescape(text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = " ".join(text.replace("\xa0", " ").split())
+    if not text:
+        return None
+    if len(text) > limit:
+        text = text[: limit - 1] + "…"
+    return text
+
+
+def text_hash(text: str | None) -> str | None:
+    """설명이 바뀌었는지 보는 지문 (sha256). 같은 글이면 같은 값이라 임베딩을 다시 만들지 않아도 된다."""
+    if not text:
+        return None
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+# 학년 표현은 만 나이로 본다 (초등 1학년 = 만 7세, 중학생 = 만 12세, 고등학생 = 만 15세, 청소년 관람불가 = 만 19세)
+_AGE_WORDS = (("청소년 관람불가", 19 * 12), ("청소년관람불가", 19 * 12), ("성인", 19 * 12),
+              ("고등학생", 15 * 12), ("중학생", 12 * 12), ("초등학생", 7 * 12), ("초등", 7 * 12))
+
+
+def parse_age_months(raw: str | None) -> int | None:
+    """관람연령 → 볼 수 있는 최소 나이(개월). 알 수 없으면 None.
+
+    '전체 관람가' → 0, '24개월 이상' → 24, '만 7세 이상' → 84, '12세 이상' → 144, '초등학생 이상' → 84
+    """
+    if not raw:
+        return None
+    text = " ".join(raw.split())
+    if "전체" in text:
+        return 0
+    found = re.search(r"(\d+)\s*개월", text)
+    if found:
+        return int(found.group(1))
+    found = re.search(r"(\d+)\s*세", text)
+    if found:
+        return int(found.group(1)) * 12
+    for word, months in _AGE_WORDS:
+        if word in text:
+            return months
+    return None
+
+
+def parse_runtime_min(raw: str | None) -> int | None:
+    """러닝타임 → 분. '1시간 30분' → 90, '90분' → 90, '1시간 30분(인터미션 15분 포함)' → 90. 모르면 None."""
+    if not raw:
+        return None
+    text = re.sub(r"[(\[][^)\]]*[)\]]", " ", raw)  # 괄호 속 '인터미션 15분 포함' 같은 덧붙임은 뺀다
+    text = text.split("인터미션")[0]
+    hours = re.search(r"(\d+)\s*시간", text)
+    minutes = re.search(r"(\d+)\s*분", text)
+    total = (int(hours.group(1)) * 60 if hours else 0) + (int(minutes.group(1)) if minutes else 0)
+    return total or None
+
+
+async def fill_details(rows, skip_ids, report: "SourceReport", fetch_one, source_field: str,
+                       limit: int = DETAIL_MAX_PER_AREA, concurrency: int = DETAIL_CONCURRENCY) -> None:
+    """새 행사나 설명을 아직 확인하지 않은 행사만 상세를 불러 행에 채운다.
+
+    - skip_ids: 최근에 확인한 external_id. 이 행사는 부르지 않고, 행에 상세 칸도 넣지 않는다 (저장된 값을 그대로 둔다).
+    - fetch_one(row) → 설명 원문(없으면 None). 실패하면 CollectError. 실패한 행사도 칸을 넣지 않아 다음 수집에서 다시 시도한다.
+    - limit을 넘는 행사는 다음 수집으로 미룬다.
+    """
+    skip_ids = skip_ids or set()
+    targets = []
+    for row in rows:
+        if row["external_id"] in skip_ids:
+            report.details["skipped_recent"] += 1
+        elif len(targets) < limit:
+            targets.append(row)
+        else:
+            report.details["deferred"] += 1
+    sem = asyncio.Semaphore(concurrency)
+
+    async def one(row):
+        async with sem:
+            try:
+                raw = await fetch_one(row)
+            except CollectError:
+                report.details["failed"] += 1
+                return
+        report.details["fetched"] += 1
+        extra = detail_fields(raw, source_field)
+        report.details["with_text"] += int(bool(extra["detail_text"]))
+        row.update(extra)
+
+    await asyncio.gather(*(one(r) for r in targets))
+
+
+def detail_fields(text: str | None, source_field: str, images: list[str] | None = None) -> dict:
+    """상세 조회 결과를 activities 칸으로. 설명이 없어도 '확인했다'는 시각은 남긴다 (다음 수집에서 다시 부르지 않게)."""
+    text = plain_text(text)
+    out = {
+        "detail_text": text,
+        "detail_source": source_field if text else None,
+        "text_hash": text_hash(text),
+        "detail_checked_at": datetime.now(KST).replace(tzinfo=None),
+    }
+    if images is not None:
+        out["intro_images"] = json.dumps(images, ensure_ascii=False) if images else None
+    return out

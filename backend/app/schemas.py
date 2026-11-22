@@ -125,6 +125,18 @@ class ActivityOut(BaseModel):
     lat: float | None = None
     lng: float | None = None
     created_at: datetime
+    min_age_months: int | None = None  # 관람 가능 최소 나이(개월). 전체 관람가 0, 모르면 null
+    runtime_min: int | None = None  # 러닝타임(분)
+
+
+class ActivityDetailText(BaseModel):
+    """상세 설명. 글이 길어서 목록(GET /activities)에는 넣지 않고 상세(GET /activities/{id})에만 준다."""
+
+    detail_text: str | None = None  # 줄거리·개요·전시 설명 (태그 뺀 글자, 최대 4,000자)
+    detail_source: str | None = None  # sty(KOPIS) / overview(한국관광공사) / contents1(한국문화정보원)
+    text_hash: str | None = None  # detail_text의 sha256. 임베딩을 다시 만들지 판단할 때
+    intro_images: list[str] = []  # KOPIS 소개 이미지 주소
+    detail_checked_at: datetime | None = None
 
 
 class _MeetupFields(BaseModel):
@@ -256,6 +268,7 @@ class ActivityDetailOut(BaseModel):
     activity: ActivityOut
     meetups: list[MeetupOut]
     like_count: int = 0
+    detail: ActivityDetailText | None = None
 
 
 class StatsBucket(BaseModel):
