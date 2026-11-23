@@ -63,7 +63,7 @@ QR 이용자 등록. `gender`는 `남`·`여`, `age_group`은 `20대`·`30대`·
 | `detail` | `new` | 상세 설명 조회. `new` = 새 행사·30일 넘게 확인 안 한 행사만, `all` = 전부 다시, `off` = 부르지 않음. KOPIS는 원래 상세를 불러서 항상 채운다 |
 | `dry_run` | `false` | `true`면 저장하지 않고 결과만 |
 
-**응답** `200` — `collected`, `inserted`, `updated`, `unchanged`, 출처·지역별 `results`(받은 수, 뺀 이유, 오류, `details` = 상세 불러옴·설명 있음·실패·미룸·최근 확인이라 건너뜀), `sample`, `text_coverage`(DB 전체 출처별 행사 수·설명 있음·200자 이상·관람연령 있음)
+**응답** `200` — `collected`, `inserted`, `updated`, `unchanged`, 출처·지역별 `results`(받은 수, 뺀 이유, 오류, `details` = 상세 불러옴·설명 있음·실패·미룸·최근 확인이라 건너뜀, `detail_failures` = 상세 실패 사유별 건수), `sample`, `text_coverage`(DB 전체 출처별 행사 수·설명 있음·200자 이상·관람연령 있음)
 
 - `401` 토큰 불일치 · `503` `COLLECT_TOKEN` 미설정 · `422` 잘못된 옵션
 

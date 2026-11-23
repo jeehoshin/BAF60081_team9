@@ -65,7 +65,19 @@ MAX_LEN = {
 
 DETAIL_MAX_CHARS = 4000  # 설명 글자 수 상한. 임베딩·프롬프트에 넣기 좋은 길이로 자른다
 DETAIL_MAX_PER_AREA = 150  # 한 번 수집에서 출처·지역마다 상세를 부르는 최대 수 (TourAPI 개발계정 하루 1,000건 한도 보호)
-DETAIL_CONCURRENCY = 4  # 상세를 동시에 몇 건까지 부를지
+DETAIL_CONCURRENCY = 4  # 상세를 동시에 몇 건까지 부를지 (KOPIS)
+# 공공데이터포털(apis.data.go.kr: TourAPI·문화정보원)은 초당 호출 수를 넘기면 HTTP 429와
+# LIMITED_NUMBER_OF_SERVICE_REQUESTS_PER_SECOND_EXCEEDS_ERROR 를 돌려준다.
+# 11/23 확인: 문화정보원 detail2를 4건씩 동시에 부르면 20건 중 10건이 429, 1건씩 0.4초 간격이면 20건 모두 성공.
+PORTAL_DETAIL_CONCURRENCY = 1
+PORTAL_DETAIL_DELAY = 0.4  # 초. 상세 한 건을 부른 뒤 쉬는 시간
+PORTAL_RETRY_WAITS = (1.5, 3.0)  # 초당 한도에 걸렸을 때 다시 부르기 전 기다리는 시간
+PER_SECOND_LIMIT = "LIMITED_NUMBER_OF_SERVICE_REQUESTS_PER_SECOND_EXCEEDS_ERROR"
+
+
+def is_rate_limited(status: int, body: str) -> bool:
+    """공공데이터포털의 초당 호출 한도 초과 응답인지."""
+    return status == 429 or PER_SECOND_LIMIT in body
 
 
 class CollectError(Exception):
@@ -86,9 +98,15 @@ class SourceReport:
     details: dict[str, int] = field(
         default_factory=lambda: {"fetched": 0, "with_text": 0, "failed": 0, "deferred": 0, "skipped_recent": 0}
     )
+    detail_failures: dict[str, int] = field(default_factory=dict)  # 상세 조회 실패 사유별 건수
 
     def skip(self, reason: str) -> None:
         self.skipped[reason] = self.skipped.get(reason, 0) + 1
+
+    def detail_failed(self, reason: str) -> None:
+        self.details["failed"] += 1
+        reason = reason[:60]
+        self.detail_failures[reason] = self.detail_failures.get(reason, 0) + 1
 
     def as_dict(self) -> dict:
         return {
@@ -99,6 +117,7 @@ class SourceReport:
             "skipped": self.skipped,
             "error": self.error,
             "details": self.details,
+            "detail_failures": self.detail_failures,
         }
 
 
@@ -263,12 +282,15 @@ def parse_runtime_min(raw: str | None) -> int | None:
 
 
 async def fill_details(rows, skip_ids, report: "SourceReport", fetch_one, source_field: str,
-                       limit: int = DETAIL_MAX_PER_AREA, concurrency: int = DETAIL_CONCURRENCY) -> None:
+                       limit: int = DETAIL_MAX_PER_AREA, concurrency: int = DETAIL_CONCURRENCY,
+                       delay: float = 0.0) -> None:
     """새 행사나 설명을 아직 확인하지 않은 행사만 상세를 불러 행에 채운다.
 
     - skip_ids: 최근에 확인한 external_id. 이 행사는 부르지 않고, 행에 상세 칸도 넣지 않는다 (저장된 값을 그대로 둔다).
     - fetch_one(row) → 설명 원문(없으면 None). 실패하면 CollectError. 실패한 행사도 칸을 넣지 않아 다음 수집에서 다시 시도한다.
     - limit을 넘는 행사는 다음 수집으로 미룬다.
+    - delay: 한 건을 부른 뒤 쉬는 시간(초). 공공데이터포털처럼 초당 한도가 있는 API에 쓴다.
+    - 실패 사유는 report.detail_failures에 사유별 건수로 남는다 (매일 수집 요약표에 나온다).
     """
     skip_ids = skip_ids or set()
     targets = []
@@ -285,9 +307,12 @@ async def fill_details(rows, skip_ids, report: "SourceReport", fetch_one, source
         async with sem:
             try:
                 raw = await fetch_one(row)
-            except CollectError:
-                report.details["failed"] += 1
+            except CollectError as exc:
+                report.detail_failed(str(exc))
                 return
+            finally:
+                if delay:
+                    await asyncio.sleep(delay)
         report.details["fetched"] += 1
         extra = detail_fields(raw, source_field)
         report.details["with_text"] += int(bool(extra["detail_text"]))

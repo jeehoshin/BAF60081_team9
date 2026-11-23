@@ -20,7 +20,7 @@ from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
-from app.collectors import common, kopis, runner  # noqa: E402
+from app.collectors import common, culture, kopis, runner, tourapi  # noqa: E402
 from app.collectors.common import (  # noqa: E402
     CollectError,
     SourceReport,
@@ -35,6 +35,8 @@ from app.models import Activity  # noqa: E402
 
 TODAY = date(2026, 11, 22)
 kopis.MIN_INTERVAL = kopis.RETRY_WAIT = 0
+culture.RETRY_WAITS = tourapi.RETRY_WAITS = (0, 0, 0)
+culture.PORTAL_DETAIL_DELAY = tourapi.PORTAL_DETAIL_DELAY = 0
 
 # ---------- 가짜 응답 ----------
 
@@ -215,6 +217,91 @@ class CollectorTests(unittest.TestCase):
         asyncio.run(fill_details(rows, {"T:0"}, report, fetch_one, "overview", limit=2))
         self.assertEqual(sorted(called), ["T:1", "T:2"])
         self.assertEqual(report.details, {"fetched": 1, "with_text": 1, "failed": 1, "deferred": 2, "skipped_recent": 1})
+        self.assertEqual(report.detail_failures, {"boom": 1})
+        self.assertEqual(report.as_dict()["detail_failures"], {"boom": 1})
+
+
+RATE_LIMITED = ('<?xml version="1.0" encoding="UTF-8"?><OpenAPI_ServiceResponse><cmmMsgHeader>'
+                "<errMsg>LIMITED_NUMBER_OF_SERVICE_REQUESTS_PER_SECOND_EXCEEDS_ERROR</errMsg></cmmMsgHeader>"
+                "</OpenAPI_ServiceResponse>")
+
+
+def culture_transport(calls, limited_times):
+    """문화정보원 detail2가 처음 limited_times번은 초당 한도 초과(429)를 돌려준다."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if request.url.path.endswith("/realm2"):
+            return httpx.Response(200, text=CULTURE_LIST)
+        if request.url.path.endswith("/detail2"):
+            if len(detail_calls(calls)) <= limited_times:
+                return httpx.Response(429, text=RATE_LIMITED)
+            return httpx.Response(200, text=CULTURE_DETAIL)
+        return httpx.Response(404)
+
+    return httpx.MockTransport(handler)
+
+
+def culture_rows(limited_times):
+    calls: list[httpx.Request] = []
+    report = SourceReport(source=culture.SOURCE, area="서울")
+
+    async def run():
+        async with httpx.AsyncClient(transport=culture_transport(calls, limited_times)) as client:
+            return await culture.fetch_area(client, "culture-key", "서울", TODAY, TODAY + timedelta(days=30), report,
+                                            max_span_days=0, fetch_details=True)
+
+    rows = asyncio.run(run())
+    return rows, report, calls
+
+
+class RateLimitTests(unittest.TestCase):
+    """11/23: 문화정보원 detail2를 4건씩 동시에 부르면 절반이 HTTP 429(초당 호출 한도 초과)로 실패했다."""
+
+    def test_rate_limited_detail_is_retried(self):
+        rows, report, calls = culture_rows(limited_times=2)
+        self.assertEqual(len(detail_calls(calls)), 3)
+        self.assertIn("한국 근대 회화", rows[0]["detail_text"])
+        self.assertEqual(report.details["failed"], 0)
+
+    def test_persistent_rate_limit_records_reason(self):
+        rows, report, calls = culture_rows(limited_times=99)
+        self.assertEqual(len(detail_calls(calls)), 4)  # 처음 1번 + 다시 3번
+        self.assertNotIn("detail_checked_at", rows[0])  # 다음 수집에서 다시 시도
+        self.assertEqual(report.details["failed"], 1)
+        self.assertEqual(report.detail_failures, {"문화정보원 초당 호출 한도 초과 (HTTP 429)": 1})
+
+    def test_portal_details_are_called_one_at_a_time(self):
+        self.assertEqual(common.PORTAL_DETAIL_CONCURRENCY, 1)
+        self.assertGreater(common.PORTAL_DETAIL_DELAY, 0)
+        for module in (culture, tourapi):
+            with mock.patch.object(module, "fill_details", new=mock.AsyncMock()) as fill:
+                calls: list[httpx.Request] = []
+
+                async def run():
+                    async with httpx.AsyncClient(transport=transport(calls)) as client:
+                        await module.fetch_area(client, "key", "서울", TODAY, TODAY + timedelta(days=30),
+                                                SourceReport(source="t", area="서울"), fetch_details=True)
+
+                asyncio.run(run())
+                self.assertEqual(fill.call_args.kwargs["concurrency"], 1, module.__name__)
+
+    def test_one_at_a_time_never_overlaps(self):
+        report = SourceReport(source="t", area="서울")
+        rows = [{"external_id": f"T:{i}"} for i in range(6)]
+        inflight, peak = 0, 0
+
+        async def fetch_one(row):
+            nonlocal inflight, peak
+            inflight += 1
+            peak = max(peak, inflight)
+            await asyncio.sleep(0)
+            inflight -= 1
+            return "설명"
+
+        asyncio.run(fill_details(rows, set(), report, fetch_one, "contents1",
+                                 concurrency=common.PORTAL_DETAIL_CONCURRENCY, delay=0.001))
+        self.assertEqual(peak, 1)
+        self.assertEqual(report.details["fetched"], 6)
 
 
 class StoreTests(unittest.TestCase):
