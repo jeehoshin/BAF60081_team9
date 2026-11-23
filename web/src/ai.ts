@@ -6,8 +6,9 @@
 //   draftMeetup   → POST /ai/draft   : 행사 정보 → 모임 이름·소개 초안 (사람이 고친 뒤 POST /meetups)
 // 행사 자체는 지어내지 않고 항상 공공 API에서 받은 실제 데이터에서만 고른다.
 // ─────────────────────────────────────────────────────────────
-import type { Activity, Conditions, DatePreset, Parsed } from "./types";
+import type { Activity, Conditions, DatePreset, Parsed, Pref } from "./types";
 import { DAEJEON_GU, SEOUL_GU, applyConditions, cityOf, fmtAge, fmtCost, fmtPeriod, fmtRuntime } from "./filters";
+import { detailOf, prefScore } from "./prefs";
 
 const ALL_GU = Array.from(new Set([...SEOUL_GU, ...DAEJEON_GU])).sort((a, b) => b.length - a.length);
 
@@ -18,9 +19,17 @@ const TYPE_RULES: [string, RegExp][] = [
   ["러닝", /(러닝|달리기|조깅|마라톤)/],
 ];
 
-// 알아들었지만 지금 데이터에 칸이 없어 반영할 수 없는 말. 숨기지 않고 화면에 알린다.
-// ('아이랑·가족·유아' 등은 KOPIS 관람연령 min_age_months 수집이 추가되어 이제 실제 조건 필터로 반영된다)
-const UNSUPPORTED = /(데이트|커플|혼자|조용한|야외|실내|반려견|강아지|부모님|친구랑|친구와|주차)/g;
+// 선호: 딱 맞는 칸이 없어서 걸러내지 않고, 근거(관람연령·상세 설명·장소)로 순서만 바꾸는 말 (prefs.ts)
+const PREF_RULES: [Pref, RegExp][] = [
+  ["family", /(아이랑|아이와|아이들|어린이|초등|가족|유아|아기)/],
+  ["indoor", /실내/],
+  ["outdoor", /야외/],
+  ["date", /(데이트|커플|연인)/],
+  ["handson", /(체험|만들기)/],
+];
+
+// 알아들었지만 근거를 찾을 데이터가 아예 없는 말. 숨기지 않고 화면에 알린다.
+const UNSUPPORTED = /(혼자|조용한|반려견|강아지|부모님|친구랑|친구와|주차)/g;
 
 export function parseQuery(text: string): Parsed {
   const t = text.trim();
@@ -57,14 +66,12 @@ export function parseQuery(text: string): Parsed {
   if (man) c.maxCost = Math.round(parseFloat(man[1]) * 10000);
   else if (won) c.maxCost = parseInt(won[1].replace(/,/g, ""), 10);
 
-  // 관람연령 (min_age_months <= ageMonths)
+  // 관람연령: 나이를 숫자로 말했을 때만 걸러낸다 (min_age_months <= ageMonths). '아이랑'은 아래 선호로 받는다
   const ageMo = t.match(/(\d+)\s*개월/);
   const ageYr = t.match(/(\d+)\s*세/);
   if (/전체\s*관람가?/.test(t)) c.ageMonths = 0;
   else if (ageMo) c.ageMonths = parseInt(ageMo[1], 10);
   else if (ageYr) c.ageMonths = parseInt(ageYr[1], 10) * 12;
-  else if (/(유아|아기)/.test(t)) c.ageMonths = 36;
-  else if (/(아이랑|아이와|아이들|어린이|초등|가족)/.test(t)) c.ageMonths = 84;
 
   // 러닝타임 (runtime_min <= maxRuntime)
   const runMin = t.match(/(\d+)\s*분\s*(?:이하|이내|안쪽|미만)/) ?? t.match(/러닝타임\s*(\d+)\s*분/);
@@ -72,6 +79,9 @@ export function parseQuery(text: string): Parsed {
   if (/1시간\s*반\s*(?:이하|이내|안쪽|미만)?/.test(t)) c.maxRuntime = 90;
   else if (runMin) c.maxRuntime = parseInt(runMin[1], 10);
   else if (runHr) c.maxRuntime = parseInt(runHr[1], 10) * 60;
+
+  const prefs = PREF_RULES.filter(([, re]) => re.test(t)).map(([p]) => p);
+  if (prefs.length) c.prefs = prefs;
 
   const ignored = Array.from(new Set(t.match(UNSUPPORTED) ?? []));
   const known = [
@@ -81,6 +91,7 @@ export function parseQuery(text: string): Parsed {
     c.free || c.maxCost !== undefined,
     c.ageMonths !== undefined,
     c.maxRuntime !== undefined,
+    prefs.length > 0,
   ].filter(Boolean).length;
   let confidence = known === 0 ? 0.35 : known === 1 ? 0.7 : 0.92;
   if (ignored.length) confidence -= 0.1;
@@ -100,6 +111,7 @@ export function toSchemaJson(p: Parsed) {
     free_only: c.free ?? false,
     age_months: c.ageMonths ?? null,
     max_runtime: c.maxRuntime ?? null,
+    soft_preferences: c.prefs ?? [],
     unsupported_preferences: p.ignored,
     confidence: p.confidence,
   };
@@ -129,7 +141,11 @@ export function answerWithRag(question: string, items: Activity[]): RagAnswer {
   const parsed = parseQuery(question);
   const pool = applyConditions(items, parsed.conditions);
   const words = keywords(question).filter(
-    (w) => !TYPE_RULES.some(([, re]) => re.test(w)) && !ALL_GU.includes(w) && !/^(서울|대전)/.test(w),
+    (w) =>
+      !TYPE_RULES.some(([, re]) => re.test(w)) &&
+      !PREF_RULES.some(([, re]) => re.test(w)) &&
+      !ALL_GU.includes(w) &&
+      !/^(서울|대전)/.test(w),
   );
   const known = Object.keys(parsed.conditions).length > 0;
 
@@ -140,7 +156,10 @@ export function answerWithRag(question: string, items: Activity[]): RagAnswer {
         if (item.title.includes(w)) score += 3;
         if (item.description?.includes(w)) score += 1;
         if (item.place?.includes(w)) score += 1;
+        if (detailOf(item)?.includes(w)) score += 1;
       }
+      // '아이랑'·'실내' 같은 선호는 근거(관람연령·설명·장소)가 있는 행사를 위로 올린다
+      score += prefScore(item, parsed.conditions.prefs);
       return { item, score };
     })
     .filter((s) => s.score > 0 || (known && words.length === 0))

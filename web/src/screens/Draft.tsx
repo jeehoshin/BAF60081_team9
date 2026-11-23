@@ -79,10 +79,15 @@ export default function Draft({ items, demo, activityId }: { items: Activity[]; 
   return (
     <section>
       <div className="hero">
-        <h1>
-          AI가 쓰고 <em>내가 정하는</em> 모임 만들기
-        </h1>
-        <p className="lead">행사 정보로 모임 이름·시간·소개 초안을 써 줘요. 고칠 곳은 고치고, 마지막 확인은 사람이 해요.</p>
+        <div className="hero-card">
+          <p className="eyebrow">모임 초안 · 03</p>
+          <div className="band" />
+          <h1>
+            AI가 쓰고, <em>내가 정하는</em> 모임
+          </h1>
+          <p className="strip">Draft by AI, decided by you</p>
+          <p className="lead">행사 정보로 모임 이름·시간·소개 초안을 써 줘요. 고칠 곳은 고치고, 마지막 확인은 사람이 해요.</p>
+        </div>
       </div>
 
       <div className="draft-layout">
@@ -222,12 +227,16 @@ function Picker({ items }: { items: Activity[] }) {
   return (
     <section>
       <div className="hero">
-        <h1>
-          어떤 행사로 <em>모임</em>을 만들까요?
-        </h1>
-        <p className="lead">검색 결과에서 "이 행사로 모임 만들기"를 눌러도 되고, 여기서 골라도 돼요.</p>
-        <div className="searchbar">
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="행사 이름이나 지역으로 찾기" aria-label="행사 찾기" />
+        <div className="hero-card">
+          <p className="eyebrow">모임 초안 · 03</p>
+          <div className="band" />
+          <h1>
+            어떤 행사로 <em>모일까요?</em>
+          </h1>
+          <p className="lead">검색 결과에서 "모임 만들기"를 눌러도 되고, 여기서 골라도 돼요.</p>
+          <div className="searchbar">
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="행사 이름이나 지역으로 찾기" aria-label="행사 찾기" />
+          </div>
         </div>
       </div>
       {list.length === 0 ? (

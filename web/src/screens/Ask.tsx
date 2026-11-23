@@ -63,10 +63,15 @@ export default function Ask({ items, demo, onDraft }: { items: Activity[]; demo:
   return (
     <section>
       <div className="hero">
-        <h1>
-          출처를 달아 답하는 <em>AI 동행 플래너</em>
-        </h1>
-        <p className="lead">모은 행사 자료에서 근거를 찾아 답하고, 문장마다 어느 자료에서 왔는지 번호로 보여 줘요. 근거가 없으면 지어내지 않아요.</p>
+        <div className="hero-card">
+          <p className="eyebrow">AI 동행 플래너 · 02</p>
+          <div className="band" />
+          <h1>
+            물으면, <em>근거부터</em> 찾아요
+          </h1>
+          <p className="strip">Answers with sources</p>
+          <p className="lead">모은 행사 자료에서 근거를 찾아 답하고, 문장마다 어느 자료에서 왔는지 번호로 보여 줘요. 근거가 없으면 지어내지 않아요.</p>
+        </div>
       </div>
 
       <div className="thread" role="log" aria-live="polite" aria-label="AI 동행 플래너 대화">
@@ -178,7 +183,7 @@ export default function Ask({ items, demo, onDraft }: { items: Activity[]; demo:
                   {t.a.sources.map(({ item, score }, i) => (
                     <div key={item.activity_id} id={`t${ti}-ref-${i + 1}`} className={`src-wrap ${hl === `t${ti}-ref-${i + 1}` ? "hl" : ""}`}>
                       <span className="score">유사도 {score.toFixed(2)}</span>
-                      <ActivityCard a={item} refNo={i + 1} onDraft={onDraft} />
+                      <ActivityCard a={item} refNo={i + 1} onDraft={onDraft} prefs={t.a.parsed.conditions.prefs} />
                     </div>
                   ))}
                 </div>

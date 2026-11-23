@@ -14,7 +14,7 @@ if (!js || !css) throw new Error("dist-html/assets 에 js·css가 없어요. 먼
 const code = readFileSync(join(dir, "assets", js), "utf8").replace(/<\/script/gi, "<\\/script");
 const style = readFileSync(join(dir, "assets", css), "utf8");
 const icon = `data:image/svg+xml;base64,${readFileSync("public/mascot.svg").toString("base64")}`;
-const fonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">';
+const fonts = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800;900&display=swap">';
 
 const body = `<div id="root"></div>\n<script type="module">\n${code}\n</script>`;
 
