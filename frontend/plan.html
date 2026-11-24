@@ -80,6 +80,22 @@ td.us{background:#FBF3E4;font-weight:500}
 .stat small{color:var(--muted);font-size:13px}
 
 .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:16px}
+/* 02 선행 과목 대비: 전→후 숫자 띠 + 세 칸 (선행에서 만든 것 / 이번에 이미 바꾼 것 / 6~8주차) */
+.delta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.delta div{background:var(--card);border-radius:4px;padding:12px 16px;box-shadow:0 1px 0 var(--line)}
+.delta small{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+.delta b{display:block;font-family:"Nanum Myeongjo",serif;font-weight:800;font-size:22px;line-height:1.3;margin:2px 0}
+.delta b s{color:var(--muted);font-weight:400;text-decoration:none}
+.delta b i{font-style:normal;color:var(--maroon)}
+.delta span{font-size:12.5px;color:var(--muted)}
+.ba{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.ba>div{background:var(--card);border-radius:4px;padding:14px 18px;box-shadow:0 1px 0 var(--line)}
+.ba h3{margin:6px 0 6px;font-family:"Nanum Myeongjo",serif;font-weight:700;font-size:17px}
+.ba .tag{font-size:12.5px;font-weight:700;color:var(--muted)}
+.ba ul{margin:0;padding-left:18px;font-size:14px}
+.ba li{margin:3px 0}
+.ba .now{background:#FBF3E4;box-shadow:0 0 0 1.5px var(--maroon)}
+.ba .now .tag{color:var(--maroon)}
 .chart h3{margin:0 0 4px;font-size:16px;font-weight:700;font-family:"Noto Sans KR",sans-serif}
 .chart .note{font-size:13px;color:var(--muted);margin:0 0 12px}
 .bar-row{display:grid;grid-template-columns:96px 1fr 70px;gap:10px;align-items:center;margin:8px 0;font-size:14px}
@@ -238,10 +254,10 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 
 <nav class="toc" aria-label="목차"><div class="wrap">
 <a href="#s1">1 사용자·문제<span>0:00</span></a>
-<a href="#s2">2 선행 과목 연계<span>0:50</span></a>
-<a href="#s3">3 데이터·분석<span>1:10</span></a>
-<a href="#s4">4 LLM·RAG·에이전트<span>2:00</span></a>
-<a href="#s5">5 UI/UX·이용 흐름<span>3:10</span></a>
+<a href="#s2">2 선행 과목 대비<span>0:50</span></a>
+<a href="#s3">3 데이터·분석<span>1:30</span></a>
+<a href="#s4">4 LLM·RAG·에이전트<span>2:20</span></a>
+<a href="#s5">5 UI/UX·이용 흐름<span>3:30</span></a>
 <a href="#s6">6 일정·리스크<span>5:20–5:50</span></a>
 </div></nav>
 
@@ -270,30 +286,44 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 
 <!-- 2 -->
 <section class="sec" id="s2">
-<div class="slide" data-name="02 선행 과목 연계" data-t1="70">
-<div class="sec-head"><span class="num">02</span><h2>선행 과목에서 무엇이 확장되나</h2><span class="time">0:50 – 1:10</span></div>
-<p class="msg">검증된 데이터 파이프라인은 그대로 두고, 그 위에 화면과 AI를 더합니다.</p>
-<div class="tw bkw"><table class="bk">
-<colgroup><col style="width:12%"><col style="width:32%"><col style="width:40%"><col style="width:16%"></colgroup>
-<thead><tr><th>영역</th><th>클라우드컴퓨팅실습 (선행)</th><th class="us-h">금융빅데이터분석실습 (이번)</th><th>수업</th></tr></thead>
-<tbody>
-<tr><th>화면</th><td>HTML·CSS·JS</td><td class="us">React + TypeScript</td><td>1주차</td></tr>
-<tr><th>탐색</th><td>드롭다운 필터</td><td class="us">한 문장 조건 검색 + 텍스트 분석</td><td>2·4주차</td></tr>
-<tr><th>질의</th><td>목록·상세 열람</td><td class="us">출처 달린 RAG 동행 플래너</td><td>3·5주차</td></tr>
-<tr><th>모임</th><td>빈 양식</td><td class="us">AI 초안 + 사람 승인, 에이전트로 연결</td><td>4·6·7주차</td></tr>
-</tbody></table></div>
+<div class="slide" data-name="02 선행 과목 대비 바뀐 점" data-t1="90">
+<div class="sec-head"><span class="num">02</span><h2>선행 과목 대비 무엇이 바뀌었나</h2><span class="time">0:50 – 1:30</span></div>
+<p class="msg">선행 과목 결과물 위에서, 이번 주까지 이미 바꾼 것들입니다.</p>
+<div class="delta">
+<div><small>지금 볼 수 있는 행사</small><b><s>18건</s> → <i>183건</i></b><span>11/19 → 11/24 · 매일 자동 수집</span></div>
+<div><small>행사 정보</small><b><s>목록</s> → <i>설명·연령·시간</i></b><span>공연 관람연령 93건 · 러닝타임 88건</span></div>
+<div><small>화면</small><b><s>HTML</s> → <i>React</i></b><span>프로토타입 배포 · 실제 공공 데이터</span></div>
+<div><small>AI가 틀릴 때 화면</small><b><s>없음</s> → <i>4종</i></b><span>로딩 · 결과 없음 · 429 · 확신 낮음</span></div>
+</div>
+<div class="ba">
+<div><span class="tag">클라우드컴퓨팅실습 · 그대로 활용</span><div class="band thin"></div><h3>선행 과목에서 만든 것</h3><ul>
+<li>공공 API 3종 수집기 + Supabase DB</li>
+<li>FastAPI 백엔드 · Swagger</li>
+<li>지도 · 모임톡 · QR 라이브 보드</li>
+<li>인구 대비 공급 분석 페이지</li></ul></div>
+<div class="now"><span class="tag">이번 과목 · 11/19–24 완료</span><div class="band thin"></div><h3>이미 바꾼 것</h3><ul>
+<li>React 프로토타입 3화면 (검색 · 플래너 · 모임 초안)</li>
+<li>한 문장 → 조건 칩, 칸 없는 말은 선호 + 근거 3단계</li>
+<li>매일 자동 수집 + 상세 설명 · 관람연령 · 러닝타임</li>
+<li>전시 상세 49건 실패 → 원인을 실험으로 찾아 수정</li></ul></div>
+<div><span class="tag">6~8주차 · 예정</span><div class="band thin"></div><h3>앞으로 바꿀 것</h3><ul>
+<li>실제 LLM 연결 (/ai/parse · /ai/draft)</li>
+<li>pgvector RAG 동행 플래너 (/ai/ask)</li>
+<li>에이전트 · MCP</li>
+<li>8주차: 실제 응답으로 시연</li></ul></div>
+</div>
 </div>
 </section>
 
 <!-- 3 -->
 <section class="sec" id="s3">
-<div class="slide" data-name="03 데이터·분석" data-t1="120">
-<div class="sec-head"><span class="num">03</span><h2>확보한 데이터와 분석 방향</h2><span class="time">1:10 – 2:00 · 평가 10%</span></div>
+<div class="slide" data-name="03 데이터·분석" data-t1="140">
+<div class="sec-head"><span class="num">03</span><h2>확보한 데이터와 분석 방향</h2><span class="time">1:30 – 2:20 · 평가 10%</span></div>
 <p class="msg">데이터를 실측해 보니 두 가지가 보였고, 그에 맞춰 계획을 고쳤습니다.</p>
 <div class="stats">
 <div class="stat"><b>462건</b><small>적재 행사 (KOPIS 225 · 문화정보원 170 · 관광공사 65)</small></div>
 <div class="stat"><b>183건</b><small>지금 볼 수 있는 행사 (11/24)</small></div>
-<div class="stat"><b>매일 05:17</b><small>자동 수집 (GitHub Actions, 구현 완료)</small></div>
+<div class="stat"><b>매일 새벽</b><small>자동 수집 (GitHub Actions, 구현 완료)</small></div>
 <div class="stat"><b>3곳</b><small>공공 API + KOPIS 전국 통계 + 인구 통계</small></div>
 </div>
 <div class="two">
@@ -327,8 +357,8 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 
 <!-- 4 -->
 <section class="sec" id="s4">
-<div class="slide" data-name="04 AI 기능 3가지" data-t1="150">
-<div class="sec-head"><span class="num">04</span><h2>LLM · RAG · 에이전트 활용 계획</h2><span class="time">2:00 – 3:10 · 평가 30% + 10%</span></div>
+<div class="slide" data-name="04 AI 기능 3가지" data-t1="170">
+<div class="sec-head"><span class="num">04</span><h2>LLM · RAG · 에이전트 활용 계획</h2><span class="time">2:20 – 3:30 · 평가 30% + 10%</span></div>
 <p class="msg">내용은 프롬프트로, 형식은 스키마로, 실행은 사람 승인으로 통제합니다.</p>
 <div class="feat">
 <div class="card"><span class="tag">① 한 문장 조건 검색 · <code>POST /ai/parse</code></span><div class="band thin"></div><h3>문장 → 검색 조건</h3><p>LLM 구조화 출력을 Pydantic 스키마로 허용값 검증</p><div class="guard"><b>틀리면</b> 조건 칩 ✕로 바로 수정 (AI 재호출 없음), 데이터에 없는 조건은 "반영 못 함"으로 알림</div></div>
@@ -336,7 +366,7 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <div class="card"><span class="tag">③ 모임 초안 · <code>POST /ai/draft</code></span><div class="band thin"></div><h3>말투별 초안 쓰기</h3><p>행사 정보로 이름·시간·장소·소개 초안</p><div class="guard"><b>틀리면</b> AI 초안 배지, 정원·기간 규칙 검사, 저장은 사람이 승인해야</div></div>
 </div>
 </div>
-<div class="slide" data-name="04 에이전트" data-t1="190">
+<div class="slide" data-name="04 에이전트" data-t1="210">
 <div class="cont"><span class="num">04</span><b>LLM · RAG · 에이전트</b><span>에이전트 활용 계획</span></div>
 <div class="flow">
 <h3>에이전트 1 · 동행 플래너 에이전트<small>여러 조건이 섞인 요청을 도구를 골라 단계별로</small></h3>
@@ -365,10 +395,10 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 
 <!-- 5 -->
 <section class="sec" id="s5">
-<div class="slide" data-name="05 예상 이용 흐름" data-t1="270">
-<div class="sec-head"><span class="num">05</span><h2>UI/UX 설계와 예상 이용 흐름</h2><span class="time">3:10 – 5:20 · 평가 20%</span></div>
-<p class="msg">한 문장이면 찾고, 초안이면 모인다. 저희가 예상하는 이용 흐름은 이렇습니다.</p>
-<!-- ===== 서연의 주말 : 예상 이용 흐름 애니메이션 ===== -->
+<div class="slide" data-name="05 이용 흐름" data-t1="290">
+<div class="sec-head"><span class="num">05</span><h2>UI/UX 설계와 이용 흐름</h2><span class="time">3:30 – 5:20 · 평가 20%</span></div>
+<p class="msg">한 문장이면 찾고, 초안이면 모인다. 배포된 프로토타입과 같은 화면입니다 <a href="https://baf-60086-team1.vercel.app" target="_blank" rel="noopener" style="font-family:'Noto Sans KR',sans-serif;font-size:15px">baf-60086-team1.vercel.app</a></p>
+<!-- ===== 서연의 주말 : 이용 흐름 애니메이션 (프로토타입과 같은 화면) ===== -->
 <style>
 .dm{--dm-ink:#2A2320;--dm-paper:#F4EFE4;--dm-card:#FFFDF8;--dm-line:#DDD3C2;--dm-muted:#6B5E55;--dm-maroon:#6E2A2C;--dm-brown:#8A4B22}
 .dm-shell{background:#2A2320;border-radius:10px;padding:10px 10px 0;box-shadow:0 18px 40px rgba(42,35,32,.18)}
@@ -526,11 +556,11 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 
 <div class="dm" id="dm">
 <div class="dm-shell">
-<div class="dm-bar" aria-hidden="true"><i></i><i></i><i></i><span>같이 갈래? · 예상 이용 흐름</span></div>
+<div class="dm-bar" aria-hidden="true"><i></i><i></i><i></i><span>같이 갈래? · 이용 흐름</span></div>
 <div class="dm-frame" id="dmFrame">
-<div class="dm-stage" id="dmStage" role="img" aria-label="서연이 한 문장으로 주말 공연을 찾고, 동행 플래너에서 출처와 함께 추천을 받은 뒤, AI 초안으로 모임을 열고, 범위 밖 질문에는 답변이 보류되는 예상 이용 흐름 애니메이션">
+<div class="dm-stage" id="dmStage" role="img" aria-label="서연이 한 문장으로 주말 공연을 찾고, 동행 플래너에서 출처와 함께 추천을 받은 뒤, AI 초안으로 모임을 열고, 범위 밖 질문에는 답변이 보류되는 이용 흐름 애니메이션 (배포된 프로토타입과 같은 화면)">
 <div class="dm-app-h"><span class="dm-logo">같이 갈래?<em>let's go together.</em></span>
-<span class="dm-tag">예상 화면 · 디자인 1 기준</span><span class="dm-tabs"><span class="dm-tab" data-tab="search">AI 검색</span><span class="dm-tab" data-tab="ask">동행 플래너</span><span class="dm-tab" data-tab="draft">모임 초안</span></span></div>
+<span class="dm-tag">프로토타입과 같은 화면</span><span class="dm-tabs"><span class="dm-tab" data-tab="search">AI 검색</span><span class="dm-tab" data-tab="ask">동행 플래너</span><span class="dm-tab" data-tab="draft">모임 초안</span></span></div>
 
 <!-- search -->
 <div class="dm-view" id="vSearch">
@@ -576,11 +606,11 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <div class="dm-toast" id="dToast">모임이 열렸어요 · 1/4명 참여 중</div>
 </div>
 
-<div class="dm-end" id="vEnd"><div class="band"></div><h3>한 문장이면 찾고, 초안이면 모인다.</h3><p>디자인 1 기준 예상 화면 · 행사는 2026-11-22 실제 수집 데이터 · 실제 AI 연결은 6~7주차</p><em>let's go together.</em></div>
+<div class="dm-end" id="vEnd"><div class="band"></div><h3>한 문장이면 찾고, 초안이면 모인다.</h3><p>프로토타입과 같은 화면 · 행사는 2026-11-22 실제 수집 데이터 · 실제 AI 연결은 6~7주차</p><em>let's go together.</em></div>
 
 <div class="dm-cur" id="dmCur"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2 L4 19 L8.6 15 L11.6 21.6 L14.4 20.4 L11.4 13.8 L17.6 13.8 Z" fill="#FFFDF8" stroke="#2A2320" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
 </div>
-<div class="dm-startov" id="dmStart"><button type="button" id="dmStartBtn">▶ 예상 이용 흐름 보기<small>서연의 주말 · 약 75초</small></button></div>
+<div class="dm-startov" id="dmStart"><button type="button" id="dmStartBtn">▶ 이용 흐름 보기<small>서연의 주말 · 약 75초</small></button></div>
 </div>
 </div>
 
@@ -764,7 +794,7 @@ async function s5(){
  await wait(4400);
 }
 async function s6(){
- cap('—','한 문장이면 찾고, 초안이면 모인다. 저희가 예상하는 「같이 갈래?」의 모습입니다.');
+ cap('—','한 문장이면 찾고, 초안이면 모인다. 같은 흐름을 배포된 프로토타입에서 직접 눌러 볼 수 있어요.');
  on(cur,false);on($('vEnd'));
  await wait(6500);
 }
@@ -820,7 +850,7 @@ setBtn();
 <div><b>막혀도 계속</b><span>느리면 직접 고르기, 결과 없으면 실제 건수로 조건 완화 제안</span></div>
 </div>
 <h3 class="serif" style="margin:30px 0 0;font-size:21px">디자인 방향 3안</h3>
-<p style="margin:4px 0 0;font-size:15px;color:var(--muted)">같은 데이터로 흐름까지 다르게 만든 시안입니다. 위 이용 흐름과 이 팀 페이지는 후보 1 스타일을 적용했습니다.</p>
+<p style="margin:4px 0 0;font-size:15px;color:var(--muted)">세 시안 중 <b style="color:var(--maroon)">후보 1 · 엽서와 문학전집</b>을 골라 프로토타입과 이 발표 페이지에 이미 적용했습니다.</p>
 <div class="cands">
 <div class="cand on"><div class="vp" data-w="1280"><iframe title="후보 1 미리보기" tabindex="-1" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;ko&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;&lt;title&gt;후보 1 AI 검색 데스크톱&lt;/title&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&amp;family=Noto+Sans+KR:wght@400;500;700&amp;family=Nunito:wght@800;900&amp;display=swap&quot;&gt;&lt;style&gt;body{margin:0;background:#F4EFE4}a{color:inherit}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div style=&quot;background: #F4EFE4; color: #2A2320; font-family: &#x27;Noto Sans KR&#x27;, sans-serif; font-size: 15px; line-height: 1.6&quot;&gt;
 
