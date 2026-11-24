@@ -75,10 +75,12 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
           DAYS: ${{ inputs.days || 30 }}
         run: |
+          # 연결 실패·시간 초과면 curl이 -w로 "000"을 직접 찍는다. 여기에 "000"을 또 붙이면
+          # "000000"이 되어 아래 재시도 조건에 안 걸리므로, 실패해도 그대로 둔다(|| true).
           call() {
             curl -sS --max-time 600 -o result.json -w "%{http_code}" -X POST \
               -H "x-collect-token: $COLLECT_TOKEN" \
-              "$API_BASE/collect?days=$DAYS&dry_run=$DRY_RUN" || echo "000"
+              "$API_BASE/collect?days=$DAYS&dry_run=$DRY_RUN" || true
           }
           code=$(call)
           if [ "$code" = "000" ] || [ "$code" -ge 500 ]; then
@@ -128,7 +130,7 @@ jobs:
         run: |
           code=$(curl -sS --max-time 300 -o stats.json -w "%{http_code}" -X POST \
             -H "x-collect-token: $COLLECT_TOKEN" \
-            "$API_BASE/collect/kopis-stats?dry_run=$DRY_RUN" || echo "000")
+            "$API_BASE/collect/kopis-stats?dry_run=$DRY_RUN" || true)
           echo "응답 코드: $code"
           if [ "$code" != "200" ]; then
             echo "::error::KOPIS 통계 수집 실패 (HTTP $code)"
