@@ -25,6 +25,9 @@ import httpx
 
 from app.collectors.common import (
     AREAS,
+    PORTAL_DETAIL_CONCURRENCY,
+    PORTAL_DETAIL_DELAY,
+    PORTAL_RETRY_WAITS,
     CollectError,
     SourceReport,
     clip,
@@ -32,6 +35,7 @@ from app.collectors.common import (
     fill_details,
     gu_from_address,
     https,
+    is_rate_limited,
     join_parts,
     overlaps,
     parse_ymd,
@@ -189,15 +193,20 @@ async def fetch_area(
             items, _ = parse_page(await _get(client, params, url=DETAIL_URL))
             return items[0].get("contents1") if items else None
 
-        await fill_details(out, detail_skip, report, contents, "contents1")
+        await fill_details(out, detail_skip, report, contents, "contents1",
+                           concurrency=PORTAL_DETAIL_CONCURRENCY, delay=PORTAL_DETAIL_DELAY)
     return out
+
+
+# 서버 오류·연결 오류·초당 호출 한도 초과일 때 다시 부르기 전 기다리는 시간(초). 처음 호출 뒤 최대 3번 더 부른다
+RETRY_WAITS = (0.7, *PORTAL_RETRY_WAITS)
 
 
 async def _get(client: httpx.AsyncClient, params: dict, url: str = BASE_URL) -> str:
     problem = ""
-    for attempt in range(2):
+    for attempt in range(len(RETRY_WAITS) + 1):
         if attempt:
-            await asyncio.sleep(0.7)
+            await asyncio.sleep(RETRY_WAITS[attempt - 1])
         try:
             res = await client.get(url, params=params)
         except httpx.HTTPError as exc:
@@ -207,6 +216,9 @@ async def _get(client: httpx.AsyncClient, params: dict, url: str = BASE_URL) -> 
             problem = f"문화정보원 서버 오류 (HTTP {res.status_code})"
             continue
         body = res.text
+        if is_rate_limited(res.status_code, body):
+            problem = "문화정보원 초당 호출 한도 초과 (HTTP 429)"
+            continue
         if res.status_code >= 400 and not body.lstrip().startswith("<"):
             hint = "인증키(Decoding 키)와 활용신청 승인 여부를 확인하세요." if res.status_code in (401, 403) else ""
             # 본문에 키가 섞여 나올 수 있어 앞부분만, 그리고 키처럼 긴 문자열은 가린다

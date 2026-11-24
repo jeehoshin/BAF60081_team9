@@ -104,9 +104,9 @@ jobs:
             echo ""
             echo "### 상세 설명 조회 (이번 실행)"
             echo ""
-            echo "| 출처 | 지역 | 불러옴 | 설명 있음 | 실패 | 미룸 | 최근 확인이라 건너뜀 |"
-            echo "|---|---|---|---|---|---|---|"
-            jq -r '.results[] | select(.details != null) | "| \(.source) | \(.area) | \(.details.fetched) | \(.details.with_text) | \(.details.failed) | \(.details.deferred) | \(.details.skipped_recent) |"' result.json
+            echo "| 출처 | 지역 | 불러옴 | 설명 있음 | 실패 | 미룸 | 최근 확인이라 건너뜀 | 실패 사유 |"
+            echo "|---|---|---|---|---|---|---|---|"
+            jq -r '.results[] | select(.details != null) | "| \(.source) | \(.area) | \(.details.fetched) | \(.details.with_text) | \(.details.failed) | \(.details.deferred) | \(.details.skipped_recent) | \((.detail_failures // {}) | to_entries | map("\(.key) \(.value)건") | join(", ")) |"' result.json
             if jq -e '.text_coverage | length > 0' result.json > /dev/null 2>&1; then
               echo ""
               echo "### 설명 텍스트 충족률 (DB 전체)"
