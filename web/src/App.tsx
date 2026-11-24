@@ -12,7 +12,8 @@ const TABS: [string, string][] = [
 ];
 
 const EXT_LINKS: [string, string, string][] = [
-  ["https://baf60081team9-frontend.vercel.app/plan.html", "5주차 발표 페이지", "팀 아이디어·설계 요약 페이지 (plan.html)"],
+  ["https://baf60081team9-frontend.vercel.app/plan.html", "5주차 발표 (신)", "발표 모드·이용 흐름 애니메이션이 있는 최신 발표 자료 (plan.html)"],
+  ["https://baf60081team9-frontend.vercel.app/plan-v1.html", "5주차 발표 (구)", "이전 팀 아이디어·설계 요약 페이지 (plan-v1.html)"],
   ["https://baf60081team9-frontend.vercel.app/stats.html", "데이터 분석", "공공 데이터·KOPIS 통계·품질 분석 페이지"],
   ["https://baf60081-team9.onrender.com/docs", "Swagger API", "FastAPI 백엔드 Swagger UI (/docs)"],
   ["https://baf60081team9-frontend.vercel.app/", "기존 서비스", "선행 과목 전체 서비스 홈"],
