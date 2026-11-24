@@ -128,7 +128,14 @@ export type RagAnswer = {
 };
 
 const PARTICLE = /(에서|으로|하고|이랑|랑|에|을|를|이|가|은|는|도|의|와|과)$/;
-const STOP = new Set(["추천", "추천해줘", "알려줘", "있어", "있나요", "어디", "뭐", "갈만한", "갈", "만한", "곳", "행사", "같이", "보고", "싶어", "이번", "다음", "주말", "오늘", "내일"]);
+const STOP = new Set([
+  "추천", "추천해줘", "알려줘", "있어", "있나요", "어디", "뭐", "갈만한", "갈", "만한", "곳", "행사", "같이", "보고", "싶어", "이번", "다음", "주말", "오늘", "내일",
+  "어떻게", "어떤", "시작", "시작해", "방법", "해줘", "하나요", "할까", "좋아", "좋을까", "어때", "무엇", "누가", "언제", "얼마",
+]);
+
+// 이 서비스가 다루는 범위(서울·대전의 공연·축제·전시·모임)에 속한 질문인지 보는 말.
+// 조건도 이런 말도 없는 질문(예: "주식 투자는 어떻게 시작해?")은 행사 제목에 낱말이 우연히 겹쳐도 답하지 않는다.
+const DOMAIN = /(공연|전시|축제|행사|뮤지컬|연극|콘서트|미술|갤러리|박물관|페스티벌|러닝|모임|동행|볼\s*만|갈\s*만|가\s*볼|보러|놀러|구경|나들이|데이트|아이랑|가족|주말|오늘|내일)/;
 
 function keywords(q: string) {
   return q
@@ -148,8 +155,9 @@ export function answerWithRag(question: string, items: Activity[]): RagAnswer {
       !/^(서울|대전)/.test(w),
   );
   const known = Object.keys(parsed.conditions).length > 0;
+  const inScope = known || DOMAIN.test(question);
 
-  const scored = pool
+  const scored = (inScope ? pool : [])
     .map((item) => {
       let score = 0;
       for (const w of words) {
@@ -168,10 +176,15 @@ export function answerWithRag(question: string, items: Activity[]): RagAnswer {
 
   if (scored.length === 0) {
     return {
-      sentences: [
-        { text: "가지고 있는 공연·축제·전시 자료에서 이 질문의 근거를 찾지 못했어요.", refs: [] },
-        { text: "근거 없이 지어내 답하지 않도록 여기서 멈출게요. 지역이나 날짜, 유형을 넣어 다시 물어봐 주세요.", refs: [] },
-      ],
+      sentences: inScope
+        ? [
+            { text: "가지고 있는 공연·축제·전시 자료에서 이 질문의 근거를 찾지 못했어요.", refs: [] },
+            { text: "근거 없이 지어내 답하지 않도록 여기서 멈출게요. 지역이나 날짜, 유형을 넣어 다시 물어봐 주세요.", refs: [] },
+          ]
+        : [
+            { text: "행사 자료에서 근거를 찾지 못해 답하지 않을게요. 같이 갈래?는 서울·대전의 공연·축제·전시만 다뤄요.", refs: [] },
+            { text: "예를 들어 \"이번 주말 종로구 공연 추천해줘\"처럼 물어봐 주세요.", refs: [] },
+          ],
       sources: [],
       noEvidence: true,
       parsed,
