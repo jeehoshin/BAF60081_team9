@@ -11,7 +11,7 @@
 --ok:#2E6B3A;--ok-bg:#E5EFD9;--warn:#7A4A00;--warn-bg:#F7EAC2;--no:#7A2E22;--no-bg:#F8DED8}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans KR",sans-serif;font-size:16px;line-height:1.65}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans KR",sans-serif;font-size:16px;line-height:1.65;word-break:keep-all;overflow-wrap:break-word}
 a{color:var(--maroon)}
 .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
 .serif{font-family:"Nanum Myeongjo",serif}
@@ -217,7 +217,7 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <div class="slide" data-name="표지" data-t1="0">
 <div class="hero">
 <div class="hero-text">
-<span class="label">공연 · 축제 · 전시 동행</span>
+<span class="label">공연·전시부터 러닝·등산까지</span>
 <h1>이번 주말, 어디 갈래?</h1>
 <p class="lead">말로 물으면 <b>근거와 함께</b> 찾아 주고, 같이 갈 모임까지 열어 주는 서비스</p>
 <ul class="pills">
@@ -269,9 +269,9 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <div class="sec-head"><span class="num">01</span><h2>대상 사용자와 문제</h2><span class="time">0:00 – 0:50 · 평가 20%</span></div>
 <p class="msg">"이번 주말 종로에서 3만 원 이하로 볼 연극"이 머릿속엔 한 문장인데, 지금은 드롭다운 네 번과 빈 양식 하나가 필요합니다.</p>
 <div class="grid3">
-<div class="card"><span class="tag">페르소나</span><div class="band thin"></div><h3>서연, 32세 직장인</h3><p>금요일 밤에 주말 계획을 세운다. 조건은 자연어 한 문장인데 사이트는 4~5단계 필터를 요구한다.</p></div>
+<div class="card"><span class="tag">페르소나</span><div class="band thin"></div><h3>서연(32) · 준호(28)</h3><p>서연은 금요일 밤 주말 공연을 찾는데 사이트는 4~5단계 필터를 요구한다. 준호는 토요일 아침 같이 뛸 러닝 크루를 오픈채팅·카페를 돌며 구한다.</p></div>
 <div class="card"><span class="tag">문제 1</span><div class="band thin"></div><h3>흩어진 정보, 탐색 피로</h3><p>공연은 KOPIS, 축제는 한국관광공사, 전시는 한국문화정보원. 가격은 카드마다 직접 읽어야 한다.</p></div>
-<div class="card"><span class="tag">문제 2</span><div class="band thin"></div><h3>동행 모집의 진입장벽</h3><p>모임 제목·시간·장소·소개를 백지에서 쓰는 부담 때문에 혼자 가거나 미룬다.</p></div>
+<div class="card"><span class="tag">문제 2</span><div class="band thin"></div><h3>동행 모집의 진입장벽</h3><p>공연 동행도, 러닝·등산 크루도 제목·시간·장소·소개를 백지에서 써야 해서 혼자 가거나 미룬다.</p></div>
 </div>
 <div class="tw bkw"><table class="bk">
 <colgroup><col style="width:12%"><col style="width:28%"><col style="width:28%"><col style="width:32%"></colgroup>
@@ -279,7 +279,7 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <tbody>
 <tr><th>탐색</th><td>공연 위주, 드롭다운·키워드</td><td>사람 중심, 행사 데이터 부족</td><td class="us">공공 데이터 3종 통합 + 한 문장 검색</td></tr>
 <tr><th>신뢰</th><td>공식 정보, 축제·전시 없음</td><td>호스트 수기 작성</td><td class="us">문장마다 출처 번호, 원문 대조</td></tr>
-<tr><th>모임</th><td>없음</td><td>백지에서 작성</td><td class="us">행사 정보 기반 AI 초안 + 사람 승인</td></tr>
+<tr><th>모임</th><td>없음</td><td>백지에서 작성</td><td class="us">행사 기반 AI 초안 + 사람 승인, 러닝·등산은 한 문장 모집</td></tr>
 </tbody></table></div>
 </div>
 </section>
@@ -300,7 +300,8 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <li>공공 API 3종 수집기 + Supabase DB</li>
 <li>FastAPI 백엔드 · Swagger</li>
 <li>지도 · 모임톡 · QR 라이브 보드</li>
-<li>인구 대비 공급 분석 페이지</li></ul></div>
+<li>인구 대비 공급 분석 페이지</li>
+<li>러닝 직접 등록 + 첫 모임 개설</li></ul></div>
 <div class="now"><span class="tag">이번 과목 · 11/19–24 완료</span><div class="band thin"></div><h3>이미 바꾼 것</h3><ul>
 <li>React 프로토타입 3화면 (검색 · 플래너 · 모임 초안)</li>
 <li>한 문장 → 조건 칩, 칸 없는 말은 선호 + 근거 3단계</li>
@@ -310,6 +311,7 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <li>실제 LLM 연결 (/ai/parse · /ai/draft)</li>
 <li>pgvector RAG 동행 플래너 (/ai/ask)</li>
 <li>에이전트 · MCP</li>
+<li>러닝·등산 한 문장 모집</li>
 <li>8주차: 실제 응답으로 시연</li></ul></div>
 </div>
 </div>
@@ -363,7 +365,7 @@ body.present .pline{display:block;position:fixed;left:0;right:0;bottom:64px;heig
 <div class="feat">
 <div class="card"><span class="tag">① 한 문장 조건 검색 · <code>POST /ai/parse</code></span><div class="band thin"></div><h3>문장 → 검색 조건</h3><p>LLM 구조화 출력을 Pydantic 스키마로 허용값 검증</p><div class="guard"><b>틀리면</b> 조건 칩 ✕로 바로 수정 (AI 재호출 없음), 데이터에 없는 조건은 "반영 못 함"으로 알림</div></div>
 <div class="card"><span class="tag">② 동행 플래너 · <code>POST /ai/ask</code></span><div class="band thin"></div><h3>근거 찾아 답하기 (RAG)</h3><p>조건 필터 + pgvector 임베딩 검색, 찾은 자료로만 답변</p><div class="guard"><b>틀리면</b> 근거 없으면 답변 보류, 답변 속 행사명·날짜·가격을 서버가 DB와 대조</div></div>
-<div class="card"><span class="tag">③ 모임 초안 · <code>POST /ai/draft</code></span><div class="band thin"></div><h3>말투별 초안 쓰기</h3><p>행사 정보로 이름·시간·장소·소개 초안</p><div class="guard"><b>틀리면</b> AI 초안 배지, 정원·기간 규칙 검사, 저장은 사람이 승인해야</div></div>
+<div class="card"><span class="tag">③ 모임 초안 · <code>POST /ai/draft</code></span><div class="band thin"></div><h3>말투별 초안 쓰기</h3><p>행사 정보로 이름·시간·장소·소개 초안. 러닝·등산은 "토요일 7시 반포 10km, 4명" 한 문장으로 모집 초안</p><div class="guard"><b>틀리면</b> AI 초안 배지, 정원·기간 규칙 검사, 저장은 사람이 승인해야</div></div>
 </div>
 </div>
 <div class="slide" data-name="04 에이전트" data-t1="210">
@@ -1261,8 +1263,8 @@ max_cost: 30000&lt;/p&gt;
 <thead><tr><th>주차</th><th>목표</th><th>상태</th></tr></thead>
 <tbody>
 <tr><td>5주차</td><td>아이디어·UI 프로토타입 공유 · 매일 자동 수집 · 설명 텍스트 실측 · 수집기 보강(설명·관람연령·러닝타임)</td><td><span class="st ok">준비 완료</span></td></tr>
-<tr><td>6주차</td><td><code>/ai/parse</code>·<code>/ai/draft</code> 실제 LLM 연결 · 프롬프트 V0→V3 실험</td><td><span class="st plan">예정</span></td></tr>
-<tr><td>7주차</td><td>하이브리드 RAG <code>/ai/ask</code> · 에이전트·MCP · 텍스트 분석 연결 · 보안·성능 점검</td><td><span class="st plan">예정</span></td></tr>
+<tr><td>6주차</td><td><code>/ai/parse</code>·<code>/ai/draft</code> 실제 LLM 연결 · 프롬프트 V0→V3 실험 · 러닝·등산 한 문장 모집 (등산 유형 허용)</td><td><span class="st plan">예정</span></td></tr>
+<tr><td>7주차</td><td>하이브리드 RAG <code>/ai/ask</code> · 에이전트·MCP · 텍스트 분석 연결 · 러닝·등산용 코스·날씨·대기질 공공데이터 검토 · 보안·성능 점검</td><td><span class="st plan">예정</span></td></tr>
 <tr><td>8주차</td><td>팀 페이지 통합 · RAG 우수 질의·응답 3건과 실패·개선 사례 시연 (15분 + 질의응답 5분)</td><td><span class="st plan">예정</span></td></tr>
 </tbody></table></div>
 <div class="grid3" style="margin-top:16px">
